@@ -1,3 +1,4 @@
+'''Модуль обработчиков '''
 from aiogram import types, F
 import pandas as pd
 from misc import dp
@@ -7,24 +8,46 @@ from kb import specialists_keyboard, specialist_days_keyboard
 # from aiogram.dispatcher.filters import CommandStart
 import sqlite3
 
-# Database setup
+# Коннект на базу данных
 conn = sqlite3.connect('scheduler.db')
-cursor = conn.cursor()
+# cursor = conn.cursor()
 
 
 @dp.message(Command("start"))
 async def start_handler(msg: Message):    
+    '''Начальный обработчик, вызывает клавиатуру специалистов'''
     await msg.answer("Здравствуйте, выберите специалиста", reply_markup=specialists_keyboard(conn))
 
+'''!!!ДОРОБОТАТЬ!!!'''
 @dp.callback_query(lambda c: c.data.startswith('specialist_'))
 async def specialist_selected_handler(callback_query: CallbackQuery):
-    specialist = callback_query.data.replace('specialist_', '')  # Extract the selected specialist
+    '''Ответ на start_handler'''
+    # Извлекает информацию о выбранном специалисте в формате: должность, имя, ид
+    specialist = callback_query.data.replace('specialist_', '')  
+    # Ид специалиста
     specialist_id = specialist.split()[-1]
+    # Выводим в чат 
     await callback_query.message.answer(f"Вы выбрали специалиста: {specialist}")
+    # Показываем клавиатуру  
     await callback_query.message.answer(f"Его id: {specialist_id}",
                      reply_markup = specialist_days_keyboard(conn, specialist_id))
     
 
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 # @dp.message(Command("insert_appointment"))
 # async def insert_appointment_handler(msg: Message):    
 #     await msg.answer('Здравствуйте, введите id посетителя, id специалиста, и дату-время записи в виде "1, 1, 2024-02-08 09:00:00"')

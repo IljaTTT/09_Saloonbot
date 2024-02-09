@@ -1,3 +1,4 @@
+'''Модуль клавиатур, подключается к таблицам данных и создает клавиатуры'''
 import sqlite3
 from tables import (
 #     create_tables, fill_test_data_to_tables,     
@@ -15,37 +16,46 @@ from aiogram import types
 # Load specialists data from fatabase
 # conn = sqlite3.connect('scheduler.db')  
 
-def specialists_keyboard(conn):
-    specialists = show_table(conn, 'specialists')
+def specialists_keyboard(conn: sqlite3.connect):
+    '''Принимает sqlite3.connect возвращает список специалистов 
+    в виде aiogram.types.InlineKeyboardMarkup'''
+    
+    # pd.Dataframe со специалистами салона
+    specialists = show_table(conn, 'specialists') 
 
-
-    # Create a list of tuples containing specialist names and their corresponding IDs
+    # Список специалистов
     specialists_list = [f"{spec['work_position']} {spec['name']} {spec['id']}" 
                         for _, spec in specialists.iterrows()]
 
-    # Create inline keyboard buttons for each specialist
+    # Кнопки клавиатуры из списка специалистов
     specialists_keys = [
         [types.InlineKeyboardButton(
             text=specialist, 
             callback_data=f"specialist_{specialist}")]
         for specialist in specialists_list]
 
-    # Create an InlineKeyboardMarkup with the keyboard buttons
+    # Клавиатура
     specialists_keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
     return specialists_keyboard
 
-def specialist_days_keyboard(conn, specialist_id):    
+def specialist_days_keyboard(conn: sqlite3.connect, specialist_id: int):
+    '''Принимает sqlite3.connect  и id специалиста, возвращает список записей на прием к
+    данному специалисту, в виде aiogram.types.InlineKeyboardMarkup'''
+    
+    # pd.Dataframe с расписанием специалиста
     specialist_days = show_specialist_schedule(conn, specialist_id)
-    print(specialist_days)
+#     print(specialist_days)
+    # Список записей на прием
     specialist_days_list =  [f"{spec_d['appointment_time']} {spec_d['customer_name']}" 
                         for _, spec_d in specialist_days.iterrows()]
-
+    # Кнопки клавиатуры из списка записей
     specialist_days_keys = [
         [types.InlineKeyboardButton(
             text=specialist_day, 
             callback_data=f"specialist_days{specialist_day}")]
         for specialist_day in specialist_days_list]
-
+    
+    # Клавиатура
     specialist_days_keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=specialist_days_keys)
     

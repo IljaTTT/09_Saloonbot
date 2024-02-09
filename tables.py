@@ -1,21 +1,26 @@
+'''Модуль таблиц определяет функции создания таблиц специалистов, клиентов, 
+расписания приема. Заполняет таблицы тестовыми данными, содержит функцию записи на прием
+
+'''
 import sqlite3
 import os
 from functools import wraps
 import pandas as pd 
 
+
 def print_as_dataframe(func):
+    '''Декоратор преобразует ответ базы данных в красивый и удобный pd.Dataframe'''
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # Call the original function
-        result = func(*args, **kwargs)
-        
-        # Convert the result to a pandas DataFrame
+        # Вызов оригинальной функции
+        result = func(*args, **kwargs)        
+        # Преобразование в датафрйем с описанием колонок
         df = pd.DataFrame(result, columns=[col[0] for col in result.description])        
-        return df  # Return the DataFrame
-        
+        return df          
     return wrapper
 
 def create_tables(conn):    
+    '''Функция инициализации таблиц специалистов, посетителей, рабочего расписания'''
     cursor = conn.cursor()         
     try:
         cursor.execute('''
@@ -48,6 +53,7 @@ def create_tables(conn):
         print("Error:", e)
 
 def fill_test_data_to_tables(conn):
+    '''Функция заполнения таблиц тестовыми данными'''
     cursor = conn.cursor()
     cursor.execute('''INSERT INTO specialists (name, work_position) VALUES
         ('John Smith', 'Hair Stylist'),
@@ -105,9 +111,11 @@ def fill_test_data_to_tables(conn):
 
     
 def delete_collisions_by_appointment_time(conn):
+    '''Функция удаления дубликатов записей в рабочем расписании'''
     try:
         cursor = conn.cursor()
-        # Identify the first record for each combination of appointment time and specialist
+        # Оставляет только первую запись в расписании  удаляя все остальные 
+        # с одинаковым временем записи и специалистом 
         cursor.execute("""
             DELETE FROM work_schedule
             WHERE id NOT IN (
@@ -127,11 +135,13 @@ def delete_collisions_by_appointment_time(conn):
         
 @print_as_dataframe
 def show_table(conn, table: str):
+    '''Возвращает ответ базы данных для заданной таблицы'''
     cursor = conn.cursor()
     cursor = cursor.execute(f"SELECT * FROM {table};")
     return cursor
 
 def delete_duplicates_from_specialists(conn):
+    '''Функция удаления дубликатов записей в таблице специалистов'''    
     try:
         cursor = conn.cursor()
         # Identify the first occurrence of each unique specialist
@@ -153,6 +163,8 @@ def delete_duplicates_from_specialists(conn):
         print("Error:", e)
         
 def delete_duplicates_from_customers(conn):
+    '''Функция удаления дубликатов записей в таблице посетителей'''    
+    
     try:
         cursor = conn.cursor()
         # Identify the first occurrence of each unique specialist
@@ -175,6 +187,8 @@ def delete_duplicates_from_customers(conn):
         
 @print_as_dataframe
 def show_full_schedule(conn):
+    '''Возвращает рабочее расписание в отсортированном по времени записи виде: 
+    |дата-время|имя посетителя|телефон|имя специалиста|специальность|  '''
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
@@ -196,6 +210,8 @@ def show_full_schedule(conn):
 
 @print_as_dataframe
 def show_specialist_schedule(conn, specialist_id):
+    '''Возвращает рабочее расписание для выбранного специалиста в виде: 
+    |дата-время|имя посетителя|телефон|  '''
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
@@ -214,18 +230,20 @@ def show_specialist_schedule(conn, specialist_id):
     return cursor
 
 def insert_appointment(conn, specialist_id, customer_id, appointment_time):
-    # Check if the appointment time is available
+    '''Функция записи на прием к специалисту, принимает коннект на базу, идентификатор специалиста, 
+    идентификатор посетителя, время приема'''
+    # Проверяем есть ли на уразанное время запись
     cursor = conn.cursor()
     cursor.execute('''SELECT 1 FROM work_schedule 
                        WHERE appointment_time = ? AND
                        specialist_id = ?''', 
                    (appointment_time, specialist_id))
     existing_appointment = cursor.fetchone()
-    if existing_appointment:
-        # If appointment exists, return an error
+    if existing_appointment: 
+        # Если занято то выводим ошибку
         print("Error: Appointment time is not available.")
     else:
-        # Insert the new entry into the work_schedule table
+        # Делаем запись в расписании если свободно
         cursor.execute('''INSERT INTO work_schedule (specialist_id, customer_id, 
         appointment_time) VALUES (?, ?, ?)''',
                        (specialist_id, customer_id, appointment_time))
