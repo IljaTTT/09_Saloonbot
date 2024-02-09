@@ -3,7 +3,7 @@ import pandas as pd
 from misc import dp
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
-from kb import specialists_keyboard
+from kb import specialists_keyboard, specialist_days_keyboard
 # from aiogram.dispatcher.filters import CommandStart
 import sqlite3
 
@@ -14,16 +14,23 @@ cursor = conn.cursor()
 
 @dp.message(Command("start"))
 async def start_handler(msg: Message):    
-    await msg.answer("Здравствуйте, выберите специалиста", reply_markup=specialists_keyboard)
-    
-    
+    await msg.answer("Здравствуйте, выберите специалиста", reply_markup=specialists_keyboard(conn))
+
 @dp.callback_query(lambda c: c.data.startswith('specialist_'))
 async def specialist_selected_handler(callback_query: CallbackQuery):
     specialist = callback_query.data.replace('specialist_', '')  # Extract the selected specialist
-    print(specialist)
+    specialist_id = specialist.split()[-1]
     await callback_query.message.answer(f"Вы выбрали специалиста: {specialist}")
+    await callback_query.message.answer(f"Его id: {specialist_id}",
+                     reply_markup = specialist_days_keyboard(conn, specialist_id))
+    
 
-
+# @dp.message(Command("insert_appointment"))
+# async def insert_appointment_handler(msg: Message):    
+#     await msg.answer('Здравствуйте, введите id посетителя, id специалиста, и дату-время записи в виде "1, 1, 2024-02-08 09:00:00"')
+    
+    
+    
 # # Bot functionality
 # @dp.message(Command("start"))
 # async def start_handler(msg: Message):

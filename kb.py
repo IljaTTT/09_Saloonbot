@@ -13,19 +13,40 @@ import pandas as pd
 from aiogram import types
 
 # Load specialists data from fatabase
-conn = sqlite3.connect('scheduler.db')  
-specialists = show_table(conn, 'specialists')
+# conn = sqlite3.connect('scheduler.db')  
 
-# Create a list of tuples containing specialist names and their corresponding IDs
-specialists_list = [f"{spec['work_position']} {spec['name']}" 
-                    for _, spec in specialists.iterrows()]
- 
-# Create inline keyboard buttons for each specialist
-specialists_keys = [
-    [types.InlineKeyboardButton(
-        text=specialist, 
-        callback_data=f"specialist_{specialist}")]
-    for specialist in specialists_list]
+def specialists_keyboard(conn):
+    specialists = show_table(conn, 'specialists')
 
-# Create an InlineKeyboardMarkup with the keyboard buttons
-specialists_keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
+
+    # Create a list of tuples containing specialist names and their corresponding IDs
+    specialists_list = [f"{spec['work_position']} {spec['name']} {spec['id']}" 
+                        for _, spec in specialists.iterrows()]
+
+    # Create inline keyboard buttons for each specialist
+    specialists_keys = [
+        [types.InlineKeyboardButton(
+            text=specialist, 
+            callback_data=f"specialist_{specialist}")]
+        for specialist in specialists_list]
+
+    # Create an InlineKeyboardMarkup with the keyboard buttons
+    specialists_keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
+    return specialists_keyboard
+
+def specialist_days_keyboard(conn, specialist_id):    
+    specialist_days = show_specialist_schedule(conn, specialist_id)
+    print(specialist_days)
+    specialist_days_list =  [f"{spec_d['appointment_time']} {spec_d['customer_name']}" 
+                        for _, spec_d in specialist_days.iterrows()]
+
+    specialist_days_keys = [
+        [types.InlineKeyboardButton(
+            text=specialist_day, 
+            callback_data=f"specialist_days{specialist_day}")]
+        for specialist_day in specialist_days_list]
+
+    specialist_days_keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=specialist_days_keys)
+    
+    return specialist_days_keyboard

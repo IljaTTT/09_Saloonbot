@@ -233,4 +233,4 @@ def insert_appointment(conn, specialist_id, customer_id, appointment_time):
         print("Appointment successfully scheduled.")
 
 # os.remove('scheduler.db')
-conn = sqlite3.connect('scheduler.db')
+# conn = sqlite3.connect('scheduler.db')
