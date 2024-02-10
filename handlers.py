@@ -1,41 +1,61 @@
 '''Модуль обработчиков '''
 from aiogram import types, F
-import pandas as pd
 from misc import dp
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
-from kb import specialists_keyboard, specialist_days_keyboard
-# from aiogram.dispatcher.filters import CommandStart
+from kb import specialists_keyboard, days_keyboard, specialist_daytime_keyboard
 import sqlite3
 
 # Коннект на базу данных
 conn = sqlite3.connect('scheduler.db')
-# cursor = conn.cursor()
-
 
 @dp.message(Command("start"))
 async def start_handler(msg: Message):    
     '''Начальный обработчик, вызывает клавиатуру специалистов'''
     await msg.answer("Здравствуйте, выберите специалиста", reply_markup=specialists_keyboard(conn))
 
-'''!!!ДОРОБОТАТЬ!!!'''
-@dp.callback_query(lambda c: c.data.startswith('specialist_'))
-async def specialist_selected_handler(callback_query: CallbackQuery):
-    '''Ответ на start_handler'''
-    # Извлекает информацию о выбранном специалисте в формате: должность, имя, ид
-    specialist = callback_query.data.replace('specialist_', '')  
-    # Ид специалиста
-    specialist_id = specialist.split()[-1]
-    # Выводим в чат 
-    await callback_query.message.answer(f"Вы выбрали специалиста: {specialist}")
-    # Показываем клавиатуру  
-    await callback_query.message.answer(f"Его id: {specialist_id}",
-                     reply_markup = specialist_days_keyboard(conn, specialist_id))
     
-
-
-
+@dp.callback_query(lambda c: c.data.startswith(('specialist_', 'day_', 'time_' )))
+async def specialist_select_handler(callback_query: CallbackQuery):
+    '''Ответ после выбора специалиста'''
     
+    if callback_query.data.startswith('specialist_'):
+        # Извлекает информацию о выбранном специалисте в формате: должность, имя, ид
+        specialist = callback_query.data.replace('specialist_', '')  
+        # Ид специалиста
+        specialist_id = int(specialist.split()[-1])  # Convert id to integer
+        print(specialist_id)
+        # Выводим в чат 
+        await callback_query.message.answer(f"Вы выбрали специалиста: {specialist}")
+        await callback_query.message.answer("Выберите день для записи:", 
+                                        reply_markup=days_keyboard())
+    
+    elif callback_query.data.startswith('day_'):    
+        '''Ответ после выбора специалиста'''
+        # Извлекает информацию о выбранном специалисте в формате: должность, имя, ид    
+        day = callback_query.data.replace('day_', '') 
+        print(specialist_id)
+        await callback_query.message.answer(f"Вы выбрали дату: {day}")
+        
+        await callback_query.message.answer("Выберите время приема:", 
+                                        reply_markup=specialist_daytime_keyboard(conn, specialist_id))
+    
+    elif callback_query.data.startswith('time_'):
+        '''!!!ДОРОБОТАТЬ!!!'''
+        
+        pass
+
+
+
+# @dp.callback_query(lambda c: c.data.startswith('specialist_'))
+# async def specialist_selected_handler(callback_query: CallbackQuery):
+#     '''Ответ на start_handler'''
+#     # Извлекает информацию о выбранном специалисте в формате: должность, имя, ид
+#     specialist = callback_query.data.replace('specialist_', '')  
+#     # Ид специалиста
+#     specialist_id = specialist.split()[-1]
+#     # Выводим в чат 
+#     await callback_query.message.answer(f"Вы выбрали специалиста: {specialist}")   
     
     
     

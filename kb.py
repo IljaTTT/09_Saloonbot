@@ -9,12 +9,10 @@ from tables import (
     show_specialist_schedule, 
     insert_appointment
 )
-
+import datetime
 import pandas as pd
 from aiogram import types
-
-# Load specialists data from fatabase
-# conn = sqlite3.connect('scheduler.db')  
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 def specialists_keyboard(conn: sqlite3.connect):
     '''Принимает sqlite3.connect возвращает список специалистов 
@@ -33,18 +31,39 @@ def specialists_keyboard(conn: sqlite3.connect):
             text=specialist, 
             callback_data=f"specialist_{specialist}")]
         for specialist in specialists_list]
-
     # Клавиатура
-    specialists_keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
-    return specialists_keyboard
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
+    return keyboard
 
-def specialist_days_keyboard(conn: sqlite3.connect, specialist_id: int):
+def days_keyboard():
+    '''Returns a list of appointments for the next 14 days starting from tomorrow'''
+        
+    # Generate a list of 14 dates starting from tomorrow
+    dates = [datetime.date.today() + datetime.timedelta(days=i) for i in range(14)]
+    
+    # Format dates as strings
+    date_strings = [date.strftime('%Y-%m-%d') for date in dates]
+    
+    # Create keyboard markup
+    builder = InlineKeyboardBuilder()
+    for date in date_strings:
+        builder.button(text=date[5:], callback_data=f"day_{date}")        
+    builder.adjust(7, 7)        
+    
+    return builder.as_markup()
+
+def specialist_daytime_keyboard(conn: sqlite3.connect, specialist_id: int):
+    '''Сделать клавиатуру которая будет выводить свободные для записи часы
+    выбранного специалиста'''
+    pass
+
+
+def specialist_schedule_keyboard(conn: sqlite3.connect, specialist_id: int):
     '''Принимает sqlite3.connect  и id специалиста, возвращает список записей на прием к
     данному специалисту, в виде aiogram.types.InlineKeyboardMarkup'''
     
     # pd.Dataframe с расписанием специалиста
     specialist_days = show_specialist_schedule(conn, specialist_id)
-#     print(specialist_days)
     # Список записей на прием
     specialist_days_list =  [f"{spec_d['appointment_time']} {spec_d['customer_name']}" 
                         for _, spec_d in specialist_days.iterrows()]
@@ -56,7 +75,7 @@ def specialist_days_keyboard(conn: sqlite3.connect, specialist_id: int):
         for specialist_day in specialist_days_list]
     
     # Клавиатура
-    specialist_days_keyboard = types.InlineKeyboardMarkup(
+    keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=specialist_days_keys)
     
-    return specialist_days_keyboard
+    return keyboard
