@@ -14,17 +14,20 @@ async def start_handler(msg: Message):
     '''Начальный обработчик, вызывает клавиатуру специалистов'''
     await msg.answer("Здравствуйте, выберите специалиста", reply_markup=specialists_keyboard(conn))
 
-    
+# Define specialist_id outside the handlers to make it accessible globally
+specialist_id = None
+
 @dp.callback_query(lambda c: c.data.startswith(('specialist_', 'day_', 'time_' )))
 async def specialist_select_handler(callback_query: CallbackQuery):
     '''Ответ после выбора специалиста'''
+    global specialist_id, day, time  # Declare specialist_id as global
     
     if callback_query.data.startswith('specialist_'):
         # Извлекает информацию о выбранном специалисте в формате: должность, имя, ид
         specialist = callback_query.data.replace('specialist_', '')  
         # Ид специалиста
         specialist_id = int(specialist.split()[-1])  # Convert id to integer
-        print(specialist_id)
+        print(f'Выбран специалист {specialist_id}')
         # Выводим в чат 
         await callback_query.message.answer(f"Вы выбрали специалиста: {specialist}")
         await callback_query.message.answer("Выберите день для записи:", 
@@ -34,16 +37,20 @@ async def specialist_select_handler(callback_query: CallbackQuery):
         '''Ответ после выбора специалиста'''
         # Извлекает информацию о выбранном специалисте в формате: должность, имя, ид    
         day = callback_query.data.replace('day_', '') 
-        print(specialist_id)
+        print(f'Выбран специалист: {specialist_id}, дата: {day}')
+
         await callback_query.message.answer(f"Вы выбрали дату: {day}")
         
         await callback_query.message.answer("Выберите время приема:", 
                                         reply_markup=specialist_daytime_keyboard(conn, specialist_id))
+
     
     elif callback_query.data.startswith('time_'):
         '''!!!ДОРОБОТАТЬ!!!'''
-        
-        pass
+        time = callback_query.data.replace('time_', '') 
+        print(f'Выбран специалист: {specialist_id}, дата: {day}, время: {time}')
+        await callback_query.message.answer(f'Выбран специалист: {specialist_id}, дата: {day}, время: {time}')
+
 
 
 

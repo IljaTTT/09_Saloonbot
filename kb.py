@@ -55,7 +55,25 @@ def days_keyboard():
 def specialist_daytime_keyboard(conn: sqlite3.connect, specialist_id: int):
     '''Сделать клавиатуру которая будет выводить свободные для записи часы
     выбранного специалиста'''
-    pass
+    hours = [str(hour) for hour in range(8, 18)]
+    builder = InlineKeyboardBuilder()
+    
+    for hour in hours:
+        builder.button(text=f'{hour}:00', callback_data=f'time_{hour}:00')        
+    builder.adjust(5, 5)        
+    
+    return builder.as_markup()
+
+
+
+
+
+
+
+
+
+
+
 
 
 def specialist_schedule_keyboard(conn: sqlite3.connect, specialist_id: int):
