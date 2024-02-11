@@ -22,7 +22,7 @@ def specialists_keyboard(conn: sqlite3.connect):
     specialists = show_table(conn, 'specialists') 
 
     # Список специалистов
-    specialists_list = [f"{spec['work_position']} {spec['name']} {spec['id']}" 
+    specialists_list = [f"{spec['work_position']} {spec['name']},{spec['id']}" 
                         for _, spec in specialists.iterrows()]
 
     # Кнопки клавиатуры из списка специалистов
