@@ -8,7 +8,7 @@ from aiogram.filters import Command
 from kb import specialists_keyboard, days_keyboard, specialist_daytime_keyboard
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from tables import insert_appointment
+from tables import insert_appointment, get_customer_id
 
 import sqlite3
 
@@ -35,11 +35,17 @@ async def start_handler(message: Message, state: FSMContext):
     
     
 @dp.message(AppointmentStates.ASK_NAME)
-async def start_handler(message: Message, state: FSMContext):    
+async def handle_specialist_select(message: Message, state: FSMContext):    
     ''''''
     name_phone = message.text    
-    *name, phone = name_phone.split(' ')
-    print(name, phone)
+    *customer_name, customer_phone = name_phone.split(' ')
+    name = ' '.join(customer_name) if type(customer_name) == list else customer_name
+    
+    customer_id = get_customer_id(conn, customer_name, customer_phone)
+    
+    await state.update_data(customer_id=customer_id, 
+                            customer_name=customer_name,
+                            customer_phone=customer_phone)
     
     await message.answer(text = "Здравствуйте, выберите специалиста",
                          reply_markup=specialists_keyboard(conn))
@@ -84,9 +90,11 @@ async def handle_time_selected(callback_query: CallbackQuery, state: FSMContext)
     specialist, specialist_id = specialist_data.split(',')
     
     appointment_time = f'{day} {time}'
-    await callback_query.message.answer(f"Вы записались к {specialist} на {day} число в {time}")    
+    print(specialist_id, customer_id, appointment_time, )
     await insert_appointment(conn, specialist_id, customer_id, appointment_time)
+    await callback_query.message.answer(f"Вы записались к {specialist} на {day} число в {time}")    
     
+    await show_specialist_schedule(conn, specialist_id)
     
     # Reset state
     await state.clear()

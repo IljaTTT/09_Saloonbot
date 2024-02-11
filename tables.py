@@ -235,7 +235,7 @@ def insert_appointment(conn, specialist_id, customer_id, appointment_time):
     # Проверяем есть ли на уразанное время запись
     cursor = conn.cursor()
     cursor.execute('''SELECT 1 FROM work_schedule 
-                       WHERE appointment_time = ? AND
+                       WHERE appointment_time = '?' AND
                        specialist_id = ?''', 
                    (appointment_time, specialist_id))
     existing_appointment = cursor.fetchone()
@@ -250,5 +250,25 @@ def insert_appointment(conn, specialist_id, customer_id, appointment_time):
         conn.commit()
         print("Appointment successfully scheduled.")
 
+def get_customer_id(conn, name, phone):
+    cursor = conn.cursor()
+    cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
+    customer_id = cursor.fetchone()
+    if not customer_id:
+        cursor.execute(f'''INSERT INTO customers (name, phone) VALUES 
+        ("{name}", "{phone}");''')
+        conn.commit()
+        cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
+        return cursor.fetchone()        
+    return customer_id[0]
+        
+    
+                       
+                     
+    
+    
+    
+    
+    
 # os.remove('scheduler.db')
 # conn = sqlite3.connect('scheduler.db')
