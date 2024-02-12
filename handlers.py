@@ -8,7 +8,7 @@ from aiogram.filters import Command
 from kb import specialists_keyboard, days_keyboard, specialist_daytime_keyboard
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from tables import insert_appointment, get_customer_id
+from tables import insert_appointment, get_customer_id, show_specialist_schedule
 
 import sqlite3
 
@@ -88,13 +88,14 @@ async def handle_time_selected(callback_query: CallbackQuery, state: FSMContext)
     data = await state.get_data()    
     specialist_data, day, time, customer_id = data['specialist_data'], data['day'], data['time'], data['customer_id']
     specialist, specialist_id = specialist_data.split(',')
+    specialist_id = int(specialist_id)
     
     appointment_time = f'{day} {time}'
-    print(specialist_id, customer_id, appointment_time, )
-    await insert_appointment(conn, specialist_id, customer_id, appointment_time)
+    print([specialist_id, customer_id, appointment_time])
+    insert_appointment(conn, specialist_id, customer_id, appointment_time)
     await callback_query.message.answer(f"Вы записались к {specialist} на {day} число в {time}")    
     
-    await show_specialist_schedule(conn, specialist_id)
+    print(show_specialist_schedule(conn, specialist_id))
     
     # Reset state
     await state.clear()

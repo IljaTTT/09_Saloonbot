@@ -72,38 +72,38 @@ def fill_test_data_to_tables(conn):
     print('Customers added to customers table.', end = ' ')
     
     cursor.execute('''INSERT INTO work_schedule (specialist_id, customer_id, appointment_time) VALUES
-        (1, 1, '2024-02-08 09:00:00'), -- John Smith's appointment with Alice Smith
-        (1, 1, '2024-02-08 09:00:00'), -- John Smith's appointment with Alice Smith
-        (2, 1, '2024-02-08 09:00:00'), -- John Smith's appointment with Alice Smith
-        (2, 2, '2024-02-08 10:00:00'), -- Emily Johnson's appointment with Bob Johnson
-        (3, 3, '2024-02-08 11:00:00'), -- Michael Brown's appointment with Charlie Brown
-        (4, 4, '2024-02-08 12:00:00'), -- Jessica Martinez's appointment with Diana Martinez
-        (5, 5, '2024-02-08 13:00:00'), -- David Wilson's appointment with Eva Wilson
-        (1, 2, '2024-02-08 14:00:00'), -- John Smith's appointment with Bob Johnson
-        (2, 3, '2024-02-08 15:00:00'), -- Emily Johnson's appointment with Charlie Brown
-        (3, 4, '2024-02-08 16:00:00'), -- Michael Brown's appointment with Diana Martinez
-        (4, 5, '2024-02-08 17:00:00'), -- Jessica Martinez's appointment with Eva Wilson
-        (5, 1, '2024-02-08 18:00:00'), -- David Wilson's appointment with Alice Smith
-        (1, 2, '2024-02-09 09:00:00'), -- John Smith's appointment with Bob Johnson
-        (2, 3, '2024-02-09 10:00:00'), -- Emily Johnson's appointment with Charlie Brown
-        (3, 4, '2024-02-09 11:00:00'), -- Michael Brown's appointment with Diana Martinez
-        (4, 5, '2024-02-09 12:00:00'), -- Jessica Martinez's appointment with Eva Wilson
-        (5, 1, '2024-02-09 13:00:00'), -- David Wilson's appointment with Alice Smith
-        (1, 3, '2024-02-09 14:00:00'), -- John Smith's appointment with Charlie Brown
-        (2, 4, '2024-02-09 15:00:00'), -- Emily Johnson's appointment with Diana Martinez
-        (3, 5, '2024-02-09 16:00:00'), -- Michael Brown's appointment with Eva Wilson
-        (4, 1, '2024-02-09 17:00:00'), -- Jessica Martinez's appointment with Alice Smith
-        (5, 2, '2024-02-09 18:00:00'), -- David Wilson's appointment with Bob Johnson
-        (1, 4, '2024-02-10 09:00:00'), -- John Smith's appointment with Diana Martinez
-        (2, 5, '2024-02-10 09:30:00'), -- Emily Johnson's appointment with Eva Wilson
-        (3, 1, '2024-02-10 10:00:00'), -- Michael Brown's appointment with Alice Smith
-        (4, 2, '2024-02-10 10:30:00'), -- Jessica Martinez's appointment with Bob Johnson
-        (5, 3, '2024-02-10 11:00:00'), -- David Wilson's appointment with Charlie Brown
-        (1, 5, '2024-02-10 11:30:00'), -- John Smith's appointment with Eva Wilson
-        (2, 1, '2024-02-10 12:00:00'), -- Emily Johnson's appointment with Alice Smith
-        (3, 2, '2024-02-10 12:30:00'), -- Michael Brown's appointment with Bob Johnson
-        (4, 3, '2024-02-10 13:00:00'), -- Jessica Martinez's appointment with Charlie Brown
-        (5, 4, '2024-02-10 13:30:00'); -- David Wilson's appointment with Diana Martinez''')
+        (1, 1, '2024-02-08 09:00'), -- John Smith's appointment with Alice Smith
+        (1, 1, '2024-02-08 09:00'), -- John Smith's appointment with Alice Smith
+        (2, 1, '2024-02-08 09:00'), -- John Smith's appointment with Alice Smith
+        (2, 2, '2024-02-08 10:00'), -- Emily Johnson's appointment with Bob Johnson
+        (3, 3, '2024-02-08 11:00'), -- Michael Brown's appointment with Charlie Brown
+        (4, 4, '2024-02-08 12:00'), -- Jessica Martinez's appointment with Diana Martinez
+        (5, 5, '2024-02-08 13:00'), -- David Wilson's appointment with Eva Wilson
+        (1, 2, '2024-02-08 14:00'), -- John Smith's appointment with Bob Johnson
+        (2, 3, '2024-02-08 15:00'), -- Emily Johnson's appointment with Charlie Brown
+        (3, 4, '2024-02-08 16:00'), -- Michael Brown's appointment with Diana Martinez
+        (4, 5, '2024-02-08 17:00'), -- Jessica Martinez's appointment with Eva Wilson
+        (5, 1, '2024-02-08 18:00'), -- David Wilson's appointment with Alice Smith
+        (1, 2, '2024-02-09 09:00'), -- John Smith's appointment with Bob Johnson
+        (2, 3, '2024-02-09 10:00'), -- Emily Johnson's appointment with Charlie Brown
+        (3, 4, '2024-02-09 11:00'), -- Michael Brown's appointment with Diana Martinez
+        (4, 5, '2024-02-09 12:00'), -- Jessica Martinez's appointment with Eva Wilson
+        (5, 1, '2024-02-09 13:00'), -- David Wilson's appointment with Alice Smith
+        (1, 3, '2024-02-09 14:00'), -- John Smith's appointment with Charlie Brown
+        (2, 4, '2024-02-09 15:00'), -- Emily Johnson's appointment with Diana Martinez
+        (3, 5, '2024-02-09 16:00'), -- Michael Brown's appointment with Eva Wilson
+        (4, 1, '2024-02-09 17:00'), -- Jessica Martinez's appointment with Alice Smith
+        (5, 2, '2024-02-09 18:00'), -- David Wilson's appointment with Bob Johnson
+        (1, 4, '2024-02-10 09:00'), -- John Smith's appointment with Diana Martinez
+        (2, 5, '2024-02-10 09:30'), -- Emily Johnson's appointment with Eva Wilson
+        (3, 1, '2024-02-10 10:00'), -- Michael Brown's appointment with Alice Smith
+        (4, 2, '2024-02-10 10:30'), -- Jessica Martinez's appointment with Bob Johnson
+        (5, 3, '2024-02-10 11:00'), -- David Wilson's appointment with Charlie Brown
+        (1, 5, '2024-02-10 11:30'), -- John Smith's appointment with Eva Wilson
+        (2, 1, '2024-02-10 12:00'), -- Emily Johnson's appointment with Alice Smith
+        (3, 2, '2024-02-10 12:30'), -- Michael Brown's appointment with Bob Johnson
+        (4, 3, '2024-02-10 13:00'), -- Jessica Martinez's appointment with Charlie Brown
+        (5, 4, '2024-02-10 13:30'); -- David Wilson's appointment with Diana Martinez''')
     
     print('Test records added to work_schedule table.')
     
@@ -234,14 +234,14 @@ def insert_appointment(conn, specialist_id, customer_id, appointment_time):
     идентификатор посетителя, время приема'''
     # Проверяем есть ли на уразанное время запись
     cursor = conn.cursor()
-    cursor.execute('''SELECT 1 FROM work_schedule 
-                       WHERE appointment_time = '?' AND
-                       specialist_id = ?''', 
-                   (appointment_time, specialist_id))
+    cursor.execute(f'''SELECT 1 FROM work_schedule 
+                       WHERE appointment_time = "{appointment_time}" AND
+                       specialist_id = "{specialist_id}"''')                   
     existing_appointment = cursor.fetchone()
     if existing_appointment: 
         # Если занято то выводим ошибку
         print("Error: Appointment time is not available.")
+        return False
     else:
         # Делаем запись в расписании если свободно
         cursor.execute('''INSERT INTO work_schedule (specialist_id, customer_id, 
@@ -249,6 +249,7 @@ def insert_appointment(conn, specialist_id, customer_id, appointment_time):
                        (specialist_id, customer_id, appointment_time))
         conn.commit()
         print("Appointment successfully scheduled.")
+        return True
 
 def get_customer_id(conn, name, phone):
     cursor = conn.cursor()
@@ -259,7 +260,7 @@ def get_customer_id(conn, name, phone):
         ("{name}", "{phone}");''')
         conn.commit()
         cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
-        return cursor.fetchone()        
+        return cursor.fetchone()[0]        
     return customer_id[0]
         
     
