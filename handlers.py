@@ -17,10 +17,10 @@ conn = sqlite3.connect('scheduler.db', timeout = 5)
 
 # Define states
 class AppointmentStates(StatesGroup):
-    ASKED_NAME = State()
-    CHOOSED_SPECIALIST = State()  # State for choosing specialist
-    CHOOSED_DAY = State()         # State for choosing day
-    CHOOSED_TIME = State()        # State for choosing time
+    NAME_ASKED = State()
+    SPECIALIST_CHOOSED = State()  # State for choosing specialist
+    DAY_CHOOSED = State()         # State for choosing day
+    TIME_CHOOSED = State()        # State for choosing time
     ONE_MORE_TIME = State()        # State for choosing time
     
 
@@ -33,58 +33,56 @@ async def start_handler(message: Message, state: FSMContext):
     '''Начальный обработчик, вызывает клавиатуру специалистов'''
     await message.answer(text = "Здравствуйте, введите свое имя и телефон через пробел")                          
     
-    await state.set_state(AppointmentStates.ASKED_NAME)
+    await state.set_state(AppointmentStates.NAME_ASKED)
     
     
-@dp.message(AppointmentStates.ASKED_NAME)
-async def handle_specialist_select(message: Message, state: FSMContext):    
+@dp.message(AppointmentStates.NAME_ASKED)
+async def specialist_select_handler(message: Message, state: FSMContext):    
     ''''''
+    data = await state.get_data()  
     name_phone = message.text    
     *customer_name, customer_phone = name_phone.split(' ')
-    name = ' '.join(customer_name) if type(customer_name) == list else customer_name
-    
+    name = ' '.join(customer_name) if type(customer_name) == list else customer_name        
     customer_id = get_customer_id(conn, customer_name, customer_phone)
-    
-    await state.update_data(customer_id=customer_id, 
+
+    await state.update_data(customer_id=customer_id,
                             customer_name=customer_name,
-                            customer_phone=customer_phone)
+                            customer_phone=customer_phone, 
+                            message_=message)
     
     await message.answer(text = "Здравствуйте, выберите специалиста",
                          reply_markup=specialists_keyboard(conn))
     
-    await state.set_state(AppointmentStates.CHOOSED_SPECIALIST)
+    await state.set_state(AppointmentStates.SPECIALIST_CHOOSED)
     
 
-@dp.callback_query(AppointmentStates.CHOOSED_SPECIALIST)
-async def handle_specialist_selected(callback_query: CallbackQuery, state: FSMContext):    
+@dp.callback_query(AppointmentStates.SPECIALIST_CHOOSED)
+async def date_select_handler(callback_query: CallbackQuery, state: FSMContext):    
     ''''''
     specialist_data = callback_query.data
     await callback_query.message.answer(text = "Здравствуйте, выберите день записи", 
                                        reply_markup=days_keyboard())
     await state.update_data(specialist_data=specialist_data)
     data = await state.get_data()    
-    print(data)
-    await state.set_state(AppointmentStates.CHOOSED_DAY)
+    await state.set_state(AppointmentStates.DAY_CHOOSED)
     
     
-@dp.callback_query(AppointmentStates.CHOOSED_DAY)
-async def handle_day_selected(callback_query: CallbackQuery, state: FSMContext):    
+@dp.callback_query(AppointmentStates.DAY_CHOOSED)
+async def time_select_handler(callback_query: CallbackQuery, state: FSMContext):    
     ''''''
     date = callback_query.data
-    print(date)
     data = await state.get_data()
     specialist_id = data['specialist_data'].split(',')[-1]
     await callback_query.message.answer(text = "Здравствуйте, время записи", 
                                        reply_markup=specialist_daytime_keyboard(conn, specialist_id, date))
     await state.update_data(date=date)
     data = await state.get_data()    
-    print(data)
-    await state.set_state(AppointmentStates.CHOOSED_TIME)
+    await state.set_state(AppointmentStates.TIME_CHOOSED)
 
 
     
-@dp.callback_query(AppointmentStates.CHOOSED_TIME)
-async def handle_time_selected(callback_query: CallbackQuery, state: FSMContext):    
+@dp.callback_query(AppointmentStates.TIME_CHOOSED)
+async def insert_appointment_handler(callback_query: CallbackQuery, state: FSMContext):    
     
     time = callback_query.data
     await state.update_data(time=time)
@@ -95,24 +93,25 @@ async def handle_time_selected(callback_query: CallbackQuery, state: FSMContext)
     specialist, specialist_id = specialist_data.split(',')
     specialist_id = int(specialist_id)
     
-    print([specialist_id, customer_id, appointment_date, appointment_time])
+#     print([specialist_id, customer_id, appointment_date, appointment_time])
     insert_appointment(conn, specialist_id, customer_id, appointment_date, appointment_time)
     await callback_query.message.answer(f"Вы записались к {specialist} на {appointment_date} число в {appointment_time}")    
     await callback_query.message.answer("Записатья еще?", 
                                        reply_markup=yes_no_keyboard())
     
-    print(show_specialist_schedule(conn, specialist_id))
-    
     await state.set_state(AppointmentStates.ONE_MORE_TIME)
     
-@dp.message(AppointmentStates.ONE_MORE_TIME)
-async def repeat_appiontment(message: Message, state: FSMContext):  
+@dp.callback_query(AppointmentStates.ONE_MORE_TIME)
+async def repeat_appiontment(callback_query: CallbackQuery, state: FSMContext):  
     answer = callback_query.data
     if answer == 'Да':        
-        await state.set_state(AppointmentStates.ASKED_NAME)
-        await specialist_select()
+        data = await state.get_data()     
+        message = data['message_']
+        await state.set_state(AppointmentStates.NAME_ASKED)        
+        await handle_specialist_select(message, state)
+        
     else:
-        print('Отлично, я записал вас на прием... Вам перезвонят')
+        callback_query.message.answer('Отлично, я записал вас на прием... Вам перезвонят')
         await state.clear()
 
 
