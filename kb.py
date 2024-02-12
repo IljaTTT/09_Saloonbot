@@ -22,14 +22,14 @@ def specialists_keyboard(conn: sqlite3.connect):
     specialists = show_table(conn, 'specialists') 
 
     # Список специалистов
-    specialists_list = [f"{spec['work_position']} {spec['name']} {spec['id']}" 
+    specialists_list = [f"{spec['work_position']} {spec['name']},{spec['id']}" 
                         for _, spec in specialists.iterrows()]
 
     # Кнопки клавиатуры из списка специалистов
     specialists_keys = [
         [types.InlineKeyboardButton(
             text=specialist, 
-            callback_data=f"specialist_{specialist}")]
+            callback_data=specialist)]
         for specialist in specialists_list]
     # Клавиатура
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
@@ -47,7 +47,7 @@ def days_keyboard():
     # Create keyboard markup
     builder = InlineKeyboardBuilder()
     for date in date_strings:
-        builder.button(text=date[5:], callback_data=f"day_{date}")        
+        builder.button(text=date[5:], callback_data=date)        
     builder.adjust(7, 7)        
     
     return builder.as_markup()
@@ -59,7 +59,7 @@ def specialist_daytime_keyboard(conn: sqlite3.connect, specialist_id: int):
     builder = InlineKeyboardBuilder()
     
     for hour in hours:
-        builder.button(text=f'{hour}:00', callback_data=f'time_{hour}:00')        
+        builder.button(text=hour+':00', callback_data=hour+':00')        
     builder.adjust(5, 5)        
     
     return builder.as_markup()
