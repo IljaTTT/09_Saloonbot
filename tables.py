@@ -6,7 +6,8 @@ import sqlite3
 import os
 from functools import wraps
 import pandas as pd 
-
+import datetime
+from random import randint
 
 def print_as_dataframe(func):
     '''Декоратор преобразует ответ базы данных в красивый и удобный pd.Dataframe'''
@@ -19,14 +20,31 @@ def print_as_dataframe(func):
         return df          
     return wrapper
 
+def drop_tables(conn):
+    cursor = conn.cursor()     
+    try:
+        cursor.execute('DROP TABLE customers')
+        cursor.execute('DROP TABLE specialists')
+        cursor.execute('DROP TABLE work_schedule')
+    except Exception as e:
+        conn.rollback()
+        print("Error:", e)
+    conn.commit() 
+
+
 def create_tables(conn):    
     '''Функция инициализации таблиц специалистов, посетителей, рабочего расписания'''
+    try:
+        os.remove(conn)
+    except:
+        pass
     cursor = conn.cursor()         
     try:
         cursor.execute('''
             CREATE TABLE specialists(
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
+            phone TEXT NOT NULL,            
             work_position TEXT NOT NULL
             );
             ''')
@@ -34,7 +52,9 @@ def create_tables(conn):
             CREATE TABLE customers (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                phone TEXT NOT NULL
+                phone TEXT NOT NULL,
+                telegram_id TEXT NOT NULL
+                
             );
             ''')
         cursor.execute('''
@@ -42,7 +62,8 @@ def create_tables(conn):
                 id INTEGER PRIMARY KEY,
                 specialist_id INTEGER NOT NULL,
                 customer_id INTEGER NOT NULL,
-                appointment_time DATETIME NOT NULL,
+                appointment_date DATE NOT NULL,
+                appointment_time TEXT NOT NULL,
                 FOREIGN KEY (specialist_id) REFERENCES specialists(id),
                 FOREIGN KEY (customer_id) REFERENCES customers(id)
             );
@@ -52,58 +73,39 @@ def create_tables(conn):
         conn.rollback()
         print("Error:", e)
 
+def generate_random_work_schedule_records(n_records = 40):
+    record = 'INSERT INTO work_schedule (specialist_id, customer_id, appointment_date, appointment_time) VALUES\n'
+    for i in range(n_records):
+        specialist_id = randint(1, 5)
+        customer_id = randint(1, 5)
+        random_hour = randint(8, 18)
+        random_date = datetime.date.today() + datetime.timedelta(days=randint(1, 2))
+        random_date = random_date.strftime('%Y-%m-%d')
+        record += f'({specialist_id}, {customer_id}, "{random_date}", "{random_hour:02d}:00"),\n'
+
+    record = record[:-2] + ';'
+    return record
+
 def fill_test_data_to_tables(conn):
     '''Функция заполнения таблиц тестовыми данными'''
     cursor = conn.cursor()
-    cursor.execute('''INSERT INTO specialists (name, work_position) VALUES
-        ('John Smith', 'Hair Stylist'),
-        ('Emily Johnson', 'Nail Technician'),
-        ('Michael Brown', 'Esthetician'),
-        ('Jessica Martinez', 'Massage Therapist'),
-        ('David Wilson', 'Makeup Artist');''')
+    cursor.execute('''INSERT INTO specialists (name, phone, work_position) VALUES
+        ('John Smith', '444-2326', 'Hair Stylist'),
+        ('Emily Johnson', '444-3453', 'Nail Technician'),
+        ('Michael Brown', '444-7880', 'Esthetician'),
+        ('Jessica Martinez', '444-23234', 'Massage Therapist'),
+        ('David Wilson', '444-2346', 'Makeup Artist');''')
     print('Specialists added to specialists table.', end = ' ')
 
-    cursor.execute('''INSERT INTO customers (name, phone) VALUES
-        ('Alice Smith', '555-1234'),
-        ('Bob Johnson', '555-5678'),
-        ('Charlie Brown', '555-9012'),
-        ('Diana Martinez', '555-3456'),
-        ('Eva Wilson', '555-7890');''')
+    cursor.execute('''INSERT INTO customers (name, phone, telegram_id) VALUES
+        ('Alice Smith', '555-1234', '@Smith'),
+        ('Bob Johnson', '555-5678', '@John' ),
+        ('Charlie Brown', '555-9012', '@Briwn'),
+        ('Diana Martinez', '555-3456', '@Marta'),
+        ('Eva Wilson', '555-7890', '@Sida');''')
     print('Customers added to customers table.', end = ' ')
     
-    cursor.execute('''INSERT INTO work_schedule (specialist_id, customer_id, appointment_time) VALUES
-        (1, 1, '2024-02-08 09:00'), -- John Smith's appointment with Alice Smith
-        (1, 1, '2024-02-08 09:00'), -- John Smith's appointment with Alice Smith
-        (2, 1, '2024-02-08 09:00'), -- John Smith's appointment with Alice Smith
-        (2, 2, '2024-02-08 10:00'), -- Emily Johnson's appointment with Bob Johnson
-        (3, 3, '2024-02-08 11:00'), -- Michael Brown's appointment with Charlie Brown
-        (4, 4, '2024-02-08 12:00'), -- Jessica Martinez's appointment with Diana Martinez
-        (5, 5, '2024-02-08 13:00'), -- David Wilson's appointment with Eva Wilson
-        (1, 2, '2024-02-08 14:00'), -- John Smith's appointment with Bob Johnson
-        (2, 3, '2024-02-08 15:00'), -- Emily Johnson's appointment with Charlie Brown
-        (3, 4, '2024-02-08 16:00'), -- Michael Brown's appointment with Diana Martinez
-        (4, 5, '2024-02-08 17:00'), -- Jessica Martinez's appointment with Eva Wilson
-        (5, 1, '2024-02-08 18:00'), -- David Wilson's appointment with Alice Smith
-        (1, 2, '2024-02-09 09:00'), -- John Smith's appointment with Bob Johnson
-        (2, 3, '2024-02-09 10:00'), -- Emily Johnson's appointment with Charlie Brown
-        (3, 4, '2024-02-09 11:00'), -- Michael Brown's appointment with Diana Martinez
-        (4, 5, '2024-02-09 12:00'), -- Jessica Martinez's appointment with Eva Wilson
-        (5, 1, '2024-02-09 13:00'), -- David Wilson's appointment with Alice Smith
-        (1, 3, '2024-02-09 14:00'), -- John Smith's appointment with Charlie Brown
-        (2, 4, '2024-02-09 15:00'), -- Emily Johnson's appointment with Diana Martinez
-        (3, 5, '2024-02-09 16:00'), -- Michael Brown's appointment with Eva Wilson
-        (4, 1, '2024-02-09 17:00'), -- Jessica Martinez's appointment with Alice Smith
-        (5, 2, '2024-02-09 18:00'), -- David Wilson's appointment with Bob Johnson
-        (1, 4, '2024-02-10 09:00'), -- John Smith's appointment with Diana Martinez
-        (2, 5, '2024-02-10 09:30'), -- Emily Johnson's appointment with Eva Wilson
-        (3, 1, '2024-02-10 10:00'), -- Michael Brown's appointment with Alice Smith
-        (4, 2, '2024-02-10 10:30'), -- Jessica Martinez's appointment with Bob Johnson
-        (5, 3, '2024-02-10 11:00'), -- David Wilson's appointment with Charlie Brown
-        (1, 5, '2024-02-10 11:30'), -- John Smith's appointment with Eva Wilson
-        (2, 1, '2024-02-10 12:00'), -- Emily Johnson's appointment with Alice Smith
-        (3, 2, '2024-02-10 12:30'), -- Michael Brown's appointment with Bob Johnson
-        (4, 3, '2024-02-10 13:00'), -- Jessica Martinez's appointment with Charlie Brown
-        (5, 4, '2024-02-10 13:30'); -- David Wilson's appointment with Diana Martinez''')
+    cursor.execute(generate_random_work_schedule_records(20))
     
     print('Test records added to work_schedule table.')
     
@@ -121,7 +123,7 @@ def delete_collisions_by_appointment_time(conn):
             WHERE id NOT IN (
                 SELECT MIN(id)
                 FROM work_schedule
-                GROUP BY appointment_time, specialist_id
+                GROUP BY appointment_time, appointment_time, specialist_id
             )
         """)
         
@@ -192,6 +194,7 @@ def show_full_schedule(conn):
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
+        ws.appointment_date,
         ws.appointment_time,
         c.name AS customer_name,
         c.phone AS customer_phone,
@@ -204,7 +207,7 @@ def show_full_schedule(conn):
     JOIN
         specialists s ON ws.specialist_id = s.id
     ORDER BY
-        ws.appointment_time;''')
+        specialist_name, ws.appointment_date, ws.appointment_time;''')
 
     return cursor
 
@@ -215,6 +218,7 @@ def show_specialist_schedule(conn, specialist_id):
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
+        ws.appointment_date,
         ws.appointment_time,
         c.name AS customer_name,
         c.phone AS customer_phone
@@ -225,17 +229,34 @@ def show_specialist_schedule(conn, specialist_id):
     WHERE
         ws.specialist_id = ?
     ORDER BY
-        ws.appointment_time;''', (str(specialist_id)))
+        ws.appointment_date, ws.appointment_time;''', (str(specialist_id)))
 
     return cursor
 
-def insert_appointment(conn, specialist_id, customer_id, appointment_time):
+def get_busy_hours(conn, specialist_id, day):
+    '''Возвращает рабочее расписание для выбранного специалиста в виде: 
+    |дата-время|имя посетителя|телефон|  '''
+    cursor = conn.cursor()
+    cursor = cursor.execute('''
+    SELECT
+        ws.appointment_time
+    FROM
+        work_schedule ws
+    WHERE
+        ws.specialist_id = ? AND ws.appointment_date = ?
+    ORDER BY
+        ws.appointment_time;''', (str(specialist_id), str(day)))
+    result = [item[0] for item in cursor.fetchall()]
+    return result
+
+def insert_appointment(conn, specialist_id, customer_id, appointment_date, appointment_time):
     '''Функция записи на прием к специалисту, принимает коннект на базу, идентификатор специалиста, 
     идентификатор посетителя, время приема'''
     # Проверяем есть ли на уразанное время запись
     cursor = conn.cursor()
     cursor.execute(f'''SELECT 1 FROM work_schedule 
-                       WHERE appointment_time = "{appointment_time}" AND
+                       WHERE appointment_date = "{appointment_date}" AND
+                       appointment_time = "{appointment_time}" AND
                        specialist_id = "{specialist_id}"''')                   
     existing_appointment = cursor.fetchone()
     if existing_appointment: 
@@ -245,31 +266,24 @@ def insert_appointment(conn, specialist_id, customer_id, appointment_time):
     else:
         # Делаем запись в расписании если свободно
         cursor.execute('''INSERT INTO work_schedule (specialist_id, customer_id, 
-        appointment_time) VALUES (?, ?, ?)''',
-                       (specialist_id, customer_id, appointment_time))
+        appointment_date, appointment_time) VALUES (?, ?, ?, ?)''',
+                       (specialist_id, customer_id, appointment_date, appointment_time))
         conn.commit()
         print("Appointment successfully scheduled.")
         return True
 
-def get_customer_id(conn, name, phone):
+def get_customer_id(conn, name, phone, telegram_id = '@test'):
     cursor = conn.cursor()
     cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
     customer_id = cursor.fetchone()
     if not customer_id:
-        cursor.execute(f'''INSERT INTO customers (name, phone) VALUES 
-        ("{name}", "{phone}");''')
+        cursor.execute(f'''INSERT INTO customers (name, phone, telegram_id) VALUES 
+        ("{name}", "{phone}", "{telegram_id}");''')
         conn.commit()
         cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
         return cursor.fetchone()[0]        
     return customer_id[0]
         
-    
-                       
-                     
-    
-    
-    
-    
     
 # os.remove('scheduler.db')
 # conn = sqlite3.connect('scheduler.db')

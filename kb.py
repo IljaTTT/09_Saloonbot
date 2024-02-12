@@ -7,7 +7,8 @@ from tables import (
 #     delete_duplicates_from_specialists, 
     show_table, show_full_schedule, 
     show_specialist_schedule, 
-    insert_appointment
+    insert_appointment, 
+    get_busy_hours
 )
 import datetime
 import pandas as pd
@@ -52,27 +53,30 @@ def days_keyboard():
     
     return builder.as_markup()
 
-def specialist_daytime_keyboard(conn: sqlite3.connect, specialist_id: int):
+def specialist_daytime_keyboard(conn: sqlite3.connect, specialist_id: int, date: str):
     '''Сделать клавиатуру которая будет выводить свободные для записи часы
     выбранного специалиста'''
-    hours = [str(hour) for hour in range(8, 18)]
+    hours = [f'{hour:02d}:00' for hour in range(8, 18)]
+    busy_hours = get_busy_hours(conn, specialist_id, date) 
+    free_hours = [hour for hour in hours if hour not in busy_hours]
+    
     builder = InlineKeyboardBuilder()
     
-    for hour in hours:
-        builder.button(text=hour+':00', callback_data=hour+':00')        
+    for hour in free_hours:
+        builder.button(text=hour, callback_data=hour)        
     builder.adjust(5, 5)        
     
     return builder.as_markup()
 
 
 
-
-
-
-
-
-
-
+def yes_no_keyboard():
+    keys = ['Да', 'Нет'] 
+    builder = InlineKeyboardBuilder()
+    for key in keys:
+        builder.button(text=key, callback_data=key)
+    builder.adjust(2)
+    return builder.as_markup()
 
 
 
