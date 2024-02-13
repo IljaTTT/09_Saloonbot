@@ -45,6 +45,7 @@ def create_tables(conn):
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             phone TEXT NOT NULL,            
+            telegram_id TEXT, 
             work_position TEXT NOT NULL
             );
             ''')
@@ -53,7 +54,7 @@ def create_tables(conn):
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 phone TEXT NOT NULL,
-                telegram_id TEXT NOT NULL
+                telegram_id TEXT
                 
             );
             ''')
@@ -86,15 +87,15 @@ def generate_random_work_schedule_records(n_records = 40):
     record = record[:-2] + ';'
     return record
 
-def fill_test_data_to_tables(conn):
+def fill_test_data_to_tables(conn, n_records = 40):
     '''Функция заполнения таблиц тестовыми данными'''
     cursor = conn.cursor()
-    cursor.execute('''INSERT INTO specialists (name, phone, work_position) VALUES
-        ('John Smith', '444-2326', 'Hair Stylist'),
-        ('Emily Johnson', '444-3453', 'Nail Technician'),
-        ('Michael Brown', '444-7880', 'Esthetician'),
-        ('Jessica Martinez', '444-23234', 'Massage Therapist'),
-        ('David Wilson', '444-2346', 'Makeup Artist');''')
+    cursor.execute('''INSERT INTO specialists (name, phone, work_position, telegram_id) VALUES
+        ('John Smith', '444-2326', 'Hair Stylist', ''),
+        ('Emily Johnson', '444-3453', 'Nail Technician', ''),
+        ('Илья Тахтамыш', '444-7880', 'Esthetician', 'Iljattt'),
+        ('Jessica Martinez', '444-23234', 'Massage Therapist', ''),
+        ('David Wilson', '444-2346', 'Makeup Artist', '');''')
     print('Specialists added to specialists table.', end = ' ')
 
     cursor.execute('''INSERT INTO customers (name, phone, telegram_id) VALUES
@@ -105,7 +106,7 @@ def fill_test_data_to_tables(conn):
         ('Eva Wilson', '555-7890', '@Sida');''')
     print('Customers added to customers table.', end = ' ')
     
-    cursor.execute(generate_random_work_schedule_records(20))
+    cursor.execute(generate_random_work_schedule_records(n_records))
     
     print('Test records added to work_schedule table.')
     
@@ -194,12 +195,12 @@ def show_full_schedule(conn):
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
+        s.work_position AS specialist_position,
+        s.name AS specialist_name,
         ws.appointment_date,
         ws.appointment_time,
         c.name AS customer_name,
-        c.phone AS customer_phone,
-        s.name AS specialist_name,
-        s.work_position AS specialist_position
+        c.phone AS customer_phone
     FROM
         work_schedule ws
     JOIN
@@ -233,19 +234,46 @@ def show_specialist_schedule(conn, specialist_id):
 
     return cursor
 
+@print_as_dataframe
+def show_specialist_day_schedule(conn, specialist_id, day):
+    '''Возвращает рабочее расписание для выбранного специалиста в виде: 
+    |дата|время|имя посетителя|телефон|  '''
+    cursor = conn.cursor()
+    cursor = cursor.execute(f'''
+    SELECT
+        ws.appointment_date,
+        ws.appointment_time,
+        c.name AS customer_name,
+        c.phone AS customer_phone
+    FROM
+        work_schedule ws
+    JOIN
+        customers c ON ws.customer_id = c.id
+    WHERE
+        ws.specialist_id = {specialist_id} AND
+        ws.appointment_date = "{day}"
+    ORDER BY
+        ws.appointment_date, ws.appointment_time;''')
+    
+
+    return cursor
+
+
+
+
 def get_busy_hours(conn, specialist_id, day):
     '''Возвращает рабочее расписание для выбранного специалиста в виде: 
     |дата-время|имя посетителя|телефон|  '''
     cursor = conn.cursor()
-    cursor = cursor.execute('''
+    cursor = cursor.execute(f'''
     SELECT
         ws.appointment_time
     FROM
         work_schedule ws
     WHERE
-        ws.specialist_id = ? AND ws.appointment_date = ?
+        ws.specialist_id = {specialist_id} AND ws.appointment_date = "{day}"
     ORDER BY
-        ws.appointment_time;''', (str(specialist_id), str(day)))
+        ws.appointment_time;''')
     result = [item[0] for item in cursor.fetchall()]
     return result
 
@@ -284,6 +312,17 @@ def get_customer_id(conn, name, phone, telegram_id = '@test'):
         return cursor.fetchone()[0]        
     return customer_id[0]
         
-    
+def get_specialists_telegramm_ids(conn):
+    cursor = conn.cursor()
+    cursor.execute('SELECT telegram_id FROM specialists')
+    return [ids[0] for ids in cursor.fetchall()]
+
+async def get_specialist_name_and_id_by_telegram_id(conn, telegram_id):
+    cursor = conn.cursor()
+    cursor.execute(f'''SELECT name, id 
+                   FROM specialists 
+                   WHERE telegram_id = "{telegram_id}"''')   
+    name_id = cursor.fetchone()
+    return name_id
 # os.remove('scheduler.db')
 # conn = sqlite3.connect('scheduler.db')

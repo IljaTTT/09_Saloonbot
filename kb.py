@@ -21,7 +21,6 @@ def specialists_keyboard(conn: sqlite3.connect):
     
     # pd.Dataframe со специалистами салона
     specialists = show_table(conn, 'specialists') 
-
     # Список специалистов
     specialists_list = [f"{spec['work_position']} {spec['name']},{spec['id']}" 
                         for _, spec in specialists.iterrows()]
@@ -29,8 +28,8 @@ def specialists_keyboard(conn: sqlite3.connect):
     # Кнопки клавиатуры из списка специалистов
     specialists_keys = [
         [types.InlineKeyboardButton(
-            text=specialist, 
-            callback_data=specialist)]
+            text=specialist.split(',')[0], 
+            callback_data='spec_' + specialist)]
         for specialist in specialists_list]
     # Клавиатура
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
@@ -48,33 +47,34 @@ def days_keyboard():
     # Create keyboard markup
     builder = InlineKeyboardBuilder()
     for date in date_strings:
-        builder.button(text=date[5:], callback_data=date)        
-    builder.adjust(7, 7)        
+        builder.button(text=date[5:], callback_data='date_' + date[5:])        
+    
+    builder.button(text='Назад', callback_data='date_backward_')
+    builder.adjust(5, 5, 5)        
     
     return builder.as_markup()
 
-def specialist_daytime_keyboard(conn: sqlite3.connect, specialist_id: int, date: str):
+def specialist_time_keyboard(conn: sqlite3.connect, specialist_id: int, date: str):
     '''Сделать клавиатуру которая будет выводить свободные для записи часы
     выбранного специалиста'''
     hours = [f'{hour:02d}:00' for hour in range(8, 18)]
     busy_hours = get_busy_hours(conn, specialist_id, date) 
     free_hours = [hour for hour in hours if hour not in busy_hours]
-    
     builder = InlineKeyboardBuilder()
     
     for hour in free_hours:
-        builder.button(text=hour, callback_data=hour)        
-    builder.adjust(5, 5)        
+        builder.button(text=hour, callback_data='time_' + hour)        
+    
+    builder.button(text='Назад', callback_data='time_backward_')
+    builder.adjust(5, 5, 1)        
     
     return builder.as_markup()
-
-
 
 def yes_no_keyboard():
     keys = ['Да', 'Нет'] 
     builder = InlineKeyboardBuilder()
     for key in keys:
-        builder.button(text=key, callback_data=key)
+        builder.button(text=key, callback_data='yes_no_'+ key)
     builder.adjust(2)
     return builder.as_markup()
 
@@ -93,7 +93,7 @@ def specialist_schedule_keyboard(conn: sqlite3.connect, specialist_id: int):
     specialist_days_keys = [
         [types.InlineKeyboardButton(
             text=specialist_day, 
-            callback_data=f"specialist_days{specialist_day}")]
+            callback_data=f"specialist_day{specialist_day}")]
         for specialist_day in specialist_days_list]
     
     # Клавиатура
