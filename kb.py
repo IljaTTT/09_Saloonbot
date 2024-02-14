@@ -47,7 +47,7 @@ def days_keyboard():
     # Create keyboard markup
     builder = InlineKeyboardBuilder()
     for date in date_strings:
-        builder.button(text=date[5:], callback_data='date_' + date[5:])        
+        builder.button(text=date[5:], callback_data='date_' + date)        
     
     builder.button(text='Назад', callback_data='date_backward_')
     builder.adjust(5, 5, 5)        

@@ -20,59 +20,59 @@ def print_as_dataframe(func):
         return df          
     return wrapper
 
-def drop_tables(conn):
+def drop_tables(conn, tables):
     cursor = conn.cursor()     
-    try:
-        cursor.execute('DROP TABLE customers')
-        cursor.execute('DROP TABLE specialists')
-        cursor.execute('DROP TABLE work_schedule')
-    except Exception as e:
-        conn.rollback()
-        print("Error:", e)
+    for name in tables:
+        try:
+            cursor.execute(f'DROP TABLE {name}')
+        except Exception as e:
+            conn.rollback()
+            print("Error:", e)
     conn.commit() 
 
 
-def create_tables(conn):    
+def create_tables(conn, tables):    
     '''Функция инициализации таблиц специалистов, посетителей, рабочего расписания'''
     try:
-        os.remove(conn)
+#         os.remove(conn)
+        pass
     except:
         pass
-    cursor = conn.cursor()         
-    try:
-        cursor.execute('''
-            CREATE TABLE specialists(
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            phone TEXT NOT NULL,            
-            telegram_id TEXT, 
-            work_position TEXT NOT NULL
-            );
-            ''')
-        cursor.execute('''
-            CREATE TABLE customers (
+    cursor = conn.cursor()   
+    for table in tables:    
+        if table == 'specialists':
+            cursor.execute(f'''
+                CREATE TABLE specialists (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                telegram_id TEXT
-                
-            );
-            ''')
-        cursor.execute('''
-            CREATE TABLE work_schedule (
-                id INTEGER PRIMARY KEY,
-                specialist_id INTEGER NOT NULL,
-                customer_id INTEGER NOT NULL,
-                appointment_date DATE NOT NULL,
-                appointment_time TEXT NOT NULL,
-                FOREIGN KEY (specialist_id) REFERENCES specialists(id),
-                FOREIGN KEY (customer_id) REFERENCES customers(id)
-            );
-            ''')               
-        conn.commit() 
-    except Exception as e:
-        conn.rollback()
-        print("Error:", e)
+                phone TEXT NOT NULL,            
+                telegram_id TEXT, 
+                work_position TEXT NOT NULL
+                );
+                ''')
+        elif table == 'customers': 
+            cursor.execute('''
+                CREATE TABLE customers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    phone TEXT NOT NULL,
+                    telegram_id TEXT                
+                );
+                ''')
+        elif table == 'work_schedule':
+            cursor.execute('''
+                CREATE TABLE work_schedule (
+                    id INTEGER PRIMARY KEY,
+                    specialist_id INTEGER NOT NULL,
+                    customer_id INTEGER NOT NULL,
+                    appointment_date DATE NOT NULL,
+                    appointment_time TEXT NOT NULL,
+                    FOREIGN KEY (specialist_id) REFERENCES specialists(id),
+                    FOREIGN KEY (customer_id) REFERENCES customers(id)
+                );
+                ''')               
+    conn.commit() 
+    
 
 def generate_random_work_schedule_records(n_records = 40):
     record = 'INSERT INTO work_schedule (specialist_id, customer_id, appointment_date, appointment_time) VALUES\n'
@@ -87,28 +87,32 @@ def generate_random_work_schedule_records(n_records = 40):
     record = record[:-2] + ';'
     return record
 
-def fill_test_data_to_tables(conn, n_records = 40):
+def fill_test_data_to_tables(conn, tables: list, n_records = 40):
+    
     '''Функция заполнения таблиц тестовыми данными'''
     cursor = conn.cursor()
-    cursor.execute('''INSERT INTO specialists (name, phone, work_position, telegram_id) VALUES
-        ('John Smith', '444-2326', 'Hair Stylist', ''),
-        ('Emily Johnson', '444-3453', 'Nail Technician', ''),
-        ('Илья Тахтамыш', '444-7880', 'Esthetician', 'Iljattt'),
-        ('Jessica Martinez', '444-23234', 'Massage Therapist', ''),
-        ('David Wilson', '444-2346', 'Makeup Artist', '');''')
-    print('Specialists added to specialists table.', end = ' ')
-
-    cursor.execute('''INSERT INTO customers (name, phone, telegram_id) VALUES
-        ('Alice Smith', '555-1234', '@Smith'),
-        ('Bob Johnson', '555-5678', '@John' ),
-        ('Charlie Brown', '555-9012', '@Briwn'),
-        ('Diana Martinez', '555-3456', '@Marta'),
-        ('Eva Wilson', '555-7890', '@Sida');''')
-    print('Customers added to customers table.', end = ' ')
-    
-    cursor.execute(generate_random_work_schedule_records(n_records))
-    
-    print('Test records added to work_schedule table.')
+    for table in tables:
+        if table == 'specialists':
+            cursor.execute('''INSERT INTO specialists (name, phone, work_position, telegram_id) VALUES
+            ('John Smith', '444-2326', 'Hair Stylist', ''),
+            ('Emily Johnson', '444-3453', 'Nail Technician', ''),
+            ('Илья Тахтамыш', '444-7880', 'Esthetician', 'Iljattt'),
+            ('Jessica Martinez', '444-23234', 'Massage Therapist', ''),
+            ('David Wilson', '444-2346', 'Makeup Artist', '');''')
+            print('Specialists added to specialists table.', end = ' ')
+        
+        elif table == 'customers': 
+            cursor.execute('''INSERT INTO customers (name, phone, telegram_id) VALUES
+            ('Alice Smith', '555-1234', '@Smith'),
+            ('Bob Johnson', '555-5678', '@John' ),
+            ('Charlie Brown', '555-9012', '@Briwn'),
+            ('Diana Martinez', '555-3456', '@Marta'),
+            ('Eva Wilson', '555-7890', '@Sida');''')
+            print('Customers added to customers table.', end = ' ')
+            
+        elif table == 'work_schedule':
+            cursor.execute(generate_random_work_schedule_records(n_records))    
+            print('Test records added to work_schedule table.')
     
     conn.commit()
 
@@ -258,9 +262,6 @@ def show_specialist_day_schedule(conn, specialist_id, day):
 
     return cursor
 
-
-
-
 def get_busy_hours(conn, specialist_id, day):
     '''Возвращает рабочее расписание для выбранного специалиста в виде: 
     |дата-время|имя посетителя|телефон|  '''
@@ -277,10 +278,31 @@ def get_busy_hours(conn, specialist_id, day):
     result = [item[0] for item in cursor.fetchall()]
     return result
 
-def insert_appointment(conn, specialist_id, customer_id, appointment_date, appointment_time):
+async def insert_customer(conn, name, phone, telegram_id):
+    # Проверяем есть ли этот telegram_id и phone в базе
+    cursor = conn.cursor()
+    cursor.execute(f'''SELECT 1 FROM customers 
+                       WHERE phone = "{phone}" AND
+                       telegram_id = "{telegram_id}";''')                   
+    existing_appointment = cursor.fetchone()
+    if existing_appointment: 
+        # Если занято то выводим ошибку
+        print("Error: Customer phone and telegram_id alredy in customers")
+        return False
+    else:
+        print([name, phone, telegram_id])
+#         cursor = conn.cursor()
+        cursor.execute(f'''INSERT INTO customers (name, phone, telegram_id) 
+        VALUES ("{name}", "{phone}", "{telegram_id}");''')
+        conn.commit()
+        print("Customer successfully added")
+        return True
+    
+async def insert_appointment(conn, specialist_id, customer_id, appointment_date, appointment_time):
     '''Функция записи на прием к специалисту, принимает коннект на базу, идентификатор специалиста, 
     идентификатор посетителя, время приема'''
-    # Проверяем есть ли на уразанное время запись
+    # Проверяем есть ли на указанное время запись
+    print(appointment_date)
     cursor = conn.cursor()
     cursor.execute(f'''SELECT 1 FROM work_schedule 
                        WHERE appointment_date = "{appointment_date}" AND
@@ -300,7 +322,7 @@ def insert_appointment(conn, specialist_id, customer_id, appointment_date, appoi
         print("Appointment successfully scheduled.")
         return True
 
-def get_customer_id(conn, name, phone, telegram_id = '@test'):
+async def get_customer_id(conn, name, phone, telegram_id = '@test'):
     cursor = conn.cursor()
     cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
     customer_id = cursor.fetchone()
