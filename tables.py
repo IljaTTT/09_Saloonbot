@@ -20,7 +20,8 @@ def print_as_dataframe(func):
         return df          
     return wrapper
 
-def drop_tables(conn, tables):
+def drop_tables(conn: sqlite3.connect, tables: list[str]):
+    '''Функция удаления таблиц из con'''
     cursor = conn.cursor()     
     for name in tables:
         try:
@@ -96,7 +97,7 @@ def fill_test_data_to_tables(conn, tables: list, n_records = 40):
             cursor.execute('''INSERT INTO specialists (name, phone, work_position, telegram_id) VALUES
             ('John Smith', '444-2326', 'Hair Stylist', ''),
             ('Emily Johnson', '444-3453', 'Nail Technician', ''),
-            ('Илья Тахтамыш', '444-7880', 'Esthetician', 'Iljattt'),
+            ('Илья Тахтамыш', '444-7880', 'Esthetician', 'Iljattt_'),
             ('Jessica Martinez', '444-23234', 'Massage Therapist', ''),
             ('David Wilson', '444-2346', 'Makeup Artist', '');''')
             print('Specialists added to specialists table.', end = ' ')
@@ -199,12 +200,12 @@ def show_full_schedule(conn):
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
-        s.work_position AS specialist_position,
-        s.name AS specialist_name,
-        ws.appointment_date,
-        ws.appointment_time,
-        c.name AS customer_name,
-        c.phone AS customer_phone
+        s.work_position AS spec_pos,
+        s.name AS spec_name,
+        ws.appointment_date AS app_date,
+        ws.appointment_time AS app_time,
+        c.name AS cu_name,
+        c.phone AS cu_phone
     FROM
         work_schedule ws
     JOIN
@@ -212,7 +213,7 @@ def show_full_schedule(conn):
     JOIN
         specialists s ON ws.specialist_id = s.id
     ORDER BY
-        specialist_name, ws.appointment_date, ws.appointment_time;''')
+        spec_name, ws.appointment_date, ws.appointment_time;''')
 
     return cursor
 
@@ -223,10 +224,10 @@ def show_specialist_schedule(conn, specialist_id):
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
-        ws.appointment_date,
-        ws.appointment_time,
-        c.name AS customer_name,
-        c.phone AS customer_phone
+        ws.app_date,
+        ws.app_time,
+        c.name AS cu_name,
+        c.phone AS cu_phone
     FROM
         work_schedule ws
     JOIN
@@ -245,10 +246,10 @@ def show_specialist_day_schedule(conn, specialist_id, day):
     cursor = conn.cursor()
     cursor = cursor.execute(f'''
     SELECT
-        ws.appointment_date,
-        ws.appointment_time,
-        c.name AS customer_name,
-        c.phone AS customer_phone
+        ws.ap_date,
+        ws.ap_time,
+        c.name AS cu_name,
+        c.phone AS cu_phone
     FROM
         work_schedule ws
     JOIN
@@ -339,7 +340,7 @@ def get_specialists_telegramm_ids(conn):
     cursor.execute('SELECT telegram_id FROM specialists')
     return [ids[0] for ids in cursor.fetchall()]
 
-async def get_specialist_name_and_id_by_telegram_id(conn, telegram_id):
+async def get_spec_nameid(conn, telegram_id):
     cursor = conn.cursor()
     cursor.execute(f'''SELECT name, id 
                    FROM specialists 

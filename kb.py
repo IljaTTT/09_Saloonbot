@@ -12,13 +12,11 @@ from tables import (
 )
 import datetime
 import pandas as pd
-from aiogram import types
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-def specialists_keyboard(conn: sqlite3.connect):
-    '''Принимает sqlite3.connect возвращает список специалистов 
-    в виде aiogram.types.InlineKeyboardMarkup'''
-    
+def specialists_keyboard(conn: sqlite3.connect) -> InlineKeyboardMarkup:
+    '''Клавиатура выбора специалистов'''    
     # pd.Dataframe со специалистами салона
     specialists = show_table(conn, 'specialists') 
     # Список специалистов
@@ -27,37 +25,40 @@ def specialists_keyboard(conn: sqlite3.connect):
 
     # Кнопки клавиатуры из списка специалистов
     specialists_keys = [
-        [types.InlineKeyboardButton(
+        [InlineKeyboardButton(
             text=specialist.split(',')[0], 
             callback_data='spec_' + specialist)]
         for specialist in specialists_list]
     # Клавиатура
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=specialists_keys)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=specialists_keys)
     return keyboard
 
-def days_keyboard():
-    '''Returns a list of appointments for the next 14 days starting from tomorrow'''
+def days_keyboard(n_days: int = 20) -> InlineKeyboardMarkup:
+    '''Возвращает клавиатуру с днями для записи'''
         
-    # Generate a list of 14 dates starting from tomorrow
-    dates = [datetime.date.today() + datetime.timedelta(days=i) for i in range(14)]
+    # Генерация списка дней из n_days начиная с сегодняшнего дня
+    dates = [datetime.date.today() + datetime.timedelta(days=i) for i in range(n_days)]
     
-    # Format dates as strings
+    # Форматируем дни как строки
     date_strings = [date.strftime('%Y-%m-%d') for date in dates]
     
-    # Create keyboard markup
+    # Создаем клавиатуру из списка дней
     builder = InlineKeyboardBuilder()
     for date in date_strings:
         builder.button(text=date[5:], callback_data='date_' + date)        
-    
+    # Добавляем кнопу Назад
     builder.button(text='Назад', callback_data='date_backward_')
+    # Раскидываем кнопки
     builder.adjust(5, 5, 5)        
     
     return builder.as_markup()
 
-def specialist_time_keyboard(conn: sqlite3.connect, specialist_id: int, date: str):
-    '''Сделать клавиатуру которая будет выводить свободные для записи часы
-    выбранного специалиста'''
-    hours = [f'{hour:02d}:00' for hour in range(8, 18)]
+def specialist_time_keyboard(conn: sqlite3.connect, specialist_id: int, 
+                             date: str, start_hour: int = 8,
+                            end_hour: int = 18) ->InlineKeyboardMarkup:
+    '''!!!!Клавиатура выбора времени записи, с учетом рассписания специалиста,
+    принимает ид специалиста, дату'''    
+    hours = [f'{hour:02d}:00' for hour in range(start_hour, end_hour+1)] #
     busy_hours = get_busy_hours(conn, specialist_id, date) 
     free_hours = [hour for hour in hours if hour not in busy_hours]
     builder = InlineKeyboardBuilder()
@@ -91,13 +92,13 @@ def specialist_schedule_keyboard(conn: sqlite3.connect, specialist_id: int):
                         for _, spec_d in specialist_days.iterrows()]
     # Кнопки клавиатуры из списка записей
     specialist_days_keys = [
-        [types.InlineKeyboardButton(
+        [InlineKeyboardButton(
             text=specialist_day, 
             callback_data=f"specialist_day{specialist_day}")]
         for specialist_day in specialist_days_list]
     
     # Клавиатура
-    keyboard = types.InlineKeyboardMarkup(
+    keyboard = InlineKeyboardMarkup(
         inline_keyboard=specialist_days_keys)
     
     return keyboard
