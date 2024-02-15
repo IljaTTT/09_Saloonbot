@@ -32,7 +32,7 @@ def drop_tables(conn: sqlite3.connect, tables: list[str]):
     conn.commit() 
 
 
-def create_tables(conn, tables):    
+def create_tables(conn: sqlite3.connect, tables: list[str]):    
     '''Функция инициализации таблиц специалистов, посетителей, рабочего расписания'''
     try:
 #         os.remove(conn)
@@ -75,7 +75,7 @@ def create_tables(conn, tables):
     conn.commit() 
     
 
-def generate_random_work_schedule_records(n_records = 40):
+def generate_random_work_schedule_records(n_records: int = 40):
     record = 'INSERT INTO work_schedule (specialist_id, customer_id, appointment_date, appointment_time) VALUES\n'
     for i in range(n_records):
         specialist_id = randint(1, 5)

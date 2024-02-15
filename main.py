@@ -1,3 +1,4 @@
+'''Основной модуль'''
 import misc
 import handlers
 import asyncio

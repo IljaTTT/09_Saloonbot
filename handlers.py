@@ -3,6 +3,7 @@
 '''https://mastergroosha.github.io/aiogram-3-guide/fsm/'''
 from aiogram import types, F
 from misc import dp
+from config import TABLES_PATH
 import datetime
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
@@ -10,6 +11,7 @@ from kb import (specialists_keyboard, days_keyboard,
                 specialist_time_keyboard, yes_no_keyboard)
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from states import SpecialistStates, AppointmentStates
 from tables import (insert_appointment, insert_customer, show_table, 
                     get_customer_id, show_specialist_schedule,
                     show_specialist_day_schedule,
@@ -20,21 +22,8 @@ from tables import (insert_appointment, insert_customer, show_table,
 import sqlite3
 
 # Коннект на базу данных
-conn = sqlite3.connect('scheduler.db', timeout = 5)
+conn = sqlite3.connect(TABLES_PATH, timeout = 5)
 
-'''Состояния для работы со специалистами'''
-class SpecialistStates(StatesGroup):
-    DATE_SELECT = State() # Состояние выбора даты 
-    L2 = State()
-    
-'''Состояния для работы с гостями'''    
-class AppointmentStates(StatesGroup):
-    SPEC_SELECT = State() # Состояние выбора специалиста
-    DATE_SELECT = State() # Состояние выбора даты
-    TIME_SELECT = State() # Состояние выбора времени
-    INSERT_APPO = State() # Состояние записи в таблицу
-    REPEAT_THIS = State() # Состояние опроса о повторе
-    
 """Собираем телеграм ид специалистов"""
 specialists_telegramm_ids = get_specialists_telegramm_ids(conn)
 
@@ -58,7 +47,6 @@ async def start_handler(message: Message, state: FSMContext):
         await message.answer(text = 'Здравствуйте, введите свое имя и телефон через пробел') 
         await state.set_state(AppointmentStates.SPEC_SELECT)
     
-
 @dp.callback_query(SpecialistStates.DATE_SELECT, 
                    lambda c: c.data.startswith('date_'))                  
 async def specialist_selected_day_handler(callback_query: CallbackQuery, state: FSMContext):
@@ -71,7 +59,6 @@ async def specialist_selected_day_handler(callback_query: CallbackQuery, state: 
     dataframe = show_specialist_day_schedule(conn, specialist_id, date) 
     await callback_query.message.answer(text = str(dataframe)) 
     
-
 @dp.message(AppointmentStates.SPEC_SELECT)
 async def specialist_select_handler(message: Message, state: FSMContext):    
     '''Обработчик выбора специалиста для записи посетителя на прием'''
@@ -81,7 +68,6 @@ async def specialist_select_handler(message: Message, state: FSMContext):
     customer_name = '_'.join(customer_name) if type(customer_name) == list else customer_name        
     customer_id = await get_customer_id(conn, customer_name, customer_phone)  #ид пос. из таблицы
     
-      
     await state.update_data(customer_id=customer_id, # Сохраняем ид, имя, тел. в контекст
                             customer_name=customer_name,
                             customer_phone=customer_phone)
@@ -95,7 +81,6 @@ async def specialist_select_handler(message: Message, state: FSMContext):
                          reply_markup=specialists_keyboard(conn))
     await state.set_state(AppointmentStates.DATE_SELECT) #Состояние выбора даты
     
-
 @dp.callback_query(AppointmentStates.DATE_SELECT,
                    lambda c: c.data.startswith('spec_'))
 async def date_select_handler(callback_query: CallbackQuery, state: FSMContext):    
@@ -112,7 +97,7 @@ async def date_select_handler(callback_query: CallbackQuery, state: FSMContext):
                                        reply_markup=days_keyboard())    
     
     await state.set_state(AppointmentStates.TIME_SELECT) # Состояние выбора времени
-    
+
     
 @dp.callback_query(AppointmentStates.TIME_SELECT, 
                    lambda c: c.data.startswith('date_'))                  
@@ -135,7 +120,6 @@ async def time_select_handler(callback_query: CallbackQuery, state: FSMContext):
         await state.set_state(AppointmentStates.INSERT_APPO) # Состояние записи в таблицу
 
 
-    
 @dp.callback_query(AppointmentStates.INSERT_APPO, lambda c: c.data.startswith('time_'))    
 async def insert_appointment_handler(callback_query: CallbackQuery, state: FSMContext):    
     """Обработчик внесения записи в таблицу"""
