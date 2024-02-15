@@ -20,7 +20,8 @@ def print_as_dataframe(func):
         return df          
     return wrapper
 
-def drop_tables(conn: sqlite3.connect, tables: list[str]):
+def drop_tables(conn: sqlite3.connect,
+                tables = ['specialists', 'customers', 'work_schedule']):
     '''Функция удаления таблиц из con'''
     cursor = conn.cursor()     
     for name in tables:
@@ -32,7 +33,8 @@ def drop_tables(conn: sqlite3.connect, tables: list[str]):
     conn.commit() 
 
 
-def create_tables(conn: sqlite3.connect, tables: list[str]):    
+def create_tables(conn: sqlite3.connect, 
+                  tables = ['specialists', 'customers', 'work_schedule']):    
     '''Функция инициализации таблиц специалистов, посетителей, рабочего расписания'''
     try:
 #         os.remove(conn)
@@ -201,11 +203,11 @@ def show_full_schedule(conn):
     cursor = cursor.execute('''
     SELECT
         s.work_position AS spec_pos,
-        s.name AS spec_name,
-        ws.appointment_date AS app_date,
-        ws.appointment_time AS app_time,
-        c.name AS cu_name,
-        c.phone AS cu_phone
+        s.name AS s_name,
+        ws.appointment_date AS date,
+        ws.appointment_time AS time,
+        c.name AS c_name,
+        c.phone AS c_phone
     FROM
         work_schedule ws
     JOIN
@@ -213,7 +215,7 @@ def show_full_schedule(conn):
     JOIN
         specialists s ON ws.specialist_id = s.id
     ORDER BY
-        spec_name, ws.appointment_date, ws.appointment_time;''')
+        s.name, ws.appointment_date, ws.appointment_time;''')
 
     return cursor
 
@@ -224,10 +226,10 @@ def show_specialist_schedule(conn, specialist_id):
     cursor = conn.cursor()
     cursor = cursor.execute('''
     SELECT
-        ws.app_date,
-        ws.app_time,
-        c.name AS cu_name,
-        c.phone AS cu_phone
+        ws.appointment_date AS date,
+        ws.appointment_time AS time,
+        c.name AS c_name,
+        c.phone AS c_phone
     FROM
         work_schedule ws
     JOIN
@@ -246,10 +248,10 @@ def show_specialist_day_schedule(conn, specialist_id, day):
     cursor = conn.cursor()
     cursor = cursor.execute(f'''
     SELECT
-        ws.ap_date,
-        ws.ap_time,
-        c.name AS cu_name,
-        c.phone AS cu_phone
+        ws.appointment_date AS date,
+        ws.appointment_time AS time,
+        c.name AS c_name,
+        c.phone AS c_phone
     FROM
         work_schedule ws
     JOIN

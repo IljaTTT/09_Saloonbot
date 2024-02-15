@@ -1,5 +1,12 @@
 from aiogram.fsm.state import StatesGroup, State
 
+'''Состояния для работы с админом'''
+class AdminStates(StatesGroup):
+    L1 = State() # 
+    L2 = State()
+
+
+
 '''Состояния для работы со специалистами'''
 class SpecialistStates(StatesGroup):
     DATE_SELECT = State() # Состояние выбора даты 
