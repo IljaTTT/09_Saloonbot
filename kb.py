@@ -79,8 +79,6 @@ def yes_no_keyboard():
     builder.adjust(2)
     return builder.as_markup()
 
-
-
 def specialist_schedule_keyboard(conn: sqlite3.connect, specialist_id: int):
     '''Принимает sqlite3.connect  и id специалиста, возвращает список записей на прием к
     данному специалисту, в виде aiogram.types.InlineKeyboardMarkup'''

@@ -66,16 +66,20 @@ async def specialist_select_handler(message: Message, state: FSMContext):
     name_phone = message.text    # это нужно если человек захочет записаться еще к др. спец.
     *customer_name, customer_phone = name_phone.split(' ') # Если несколько слов в имени
     customer_name = '_'.join(customer_name) if type(customer_name) == list else customer_name        
-    customer_id = await get_customer_id(conn, customer_name, customer_phone)  #ид пос. из таблицы
-    
-    await state.update_data(customer_id=customer_id, # Сохраняем ид, имя, тел. в контекст
-                            customer_name=customer_name,
-                            customer_phone=customer_phone)
-    
     data = await state.get_data() # Берем телеграм ид из контекста
     telegram_id = data['telegram_id']    
-    await insert_customer(conn, name = customer_name, phone = customer_phone,
-                          telegram_id = telegram_id) #Добавляем посетителя в таблицу
+    if 'customer_id' in data: #Смотрим, есть ли в контексте customer_id
+        customer_id = data['customer_id'] #Если есть то берем его               
+    else: # Если нет то вызываем функцию получения customer_id, она проверит есть ли ид в базе
+        customer_id = await get_customer_id(conn, customer_name, #вернет его если он там есть 
+                                            customer_phone, telegram_id)  #либо создаст запись
+        
+    await state.update_data(customer_id=customer_id, # Сохраняем ид, имя, тел. в контекст
+                            customer_name=customer_name,
+                            customer_phone=customer_phone)    
+    '''!!!!'''
+#     await insert_customer(conn, name = customer_name, phone = customer_phone,
+#                           telegram_id = telegram_id) #Добавляем посетителя в таблицу
     
     await message.answer(text = "Здравствуйте, выберите специалиста:", #Клавиатура выбора специалиста
                          reply_markup=specialists_keyboard(conn))

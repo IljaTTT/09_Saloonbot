@@ -281,25 +281,27 @@ def get_busy_hours(conn, specialist_id, day):
     result = [item[0] for item in cursor.fetchall()]
     return result
 
-async def insert_customer(conn, name, phone, telegram_id):
-    # Проверяем есть ли этот telegram_id и phone в базе
-    cursor = conn.cursor()
-    cursor.execute(f'''SELECT 1 FROM customers 
-                       WHERE phone = "{phone}" AND
-                       telegram_id = "{telegram_id}";''')                   
-    existing_appointment = cursor.fetchone()
-    if existing_appointment: 
-        # Если занято то выводим ошибку
-        print("Error: Customer phone and telegram_id alredy in customers")
-        return False
-    else:
-        print([name, phone, telegram_id])
-#         cursor = conn.cursor()
-        cursor.execute(f'''INSERT INTO customers (name, phone, telegram_id) 
-        VALUES ("{name}", "{phone}", "{telegram_id}");''')
-        conn.commit()
-        print("Customer successfully added")
-        return True
+'''По идее эта функция не нужна, ее функционал включает get_customer_id '''
+# async def insert_customer(conn, name, phone, telegram_id):
+#     # Проверяем есть ли этот telegram_id и phone в базе
+#     cursor = conn.cursor()
+#     cursor.execute(f'''SELECT 1 FROM customers 
+#                        WHERE phone = "{phone}" AND
+#                        telegram_id = "{telegram_id}";''')                   
+#     existing_appointment = cursor.fetchone()
+#     print(f'existing_appointment = {existing_appointment}')
+#     if existing_appointment: 
+#         # Если занято то выводим ошибку
+#         print("Error: Customer phone and telegram_id alredy in customers")
+#         return False
+#     else:
+#         print([name, phone, telegram_id])
+# #         cursor = conn.cursor()
+#         cursor.execute(f'''INSERT INTO customers (name, phone, telegram_id) 
+#         VALUES ("{name}", "{phone}", "{telegram_id}");''')
+#         conn.commit()
+#         print("Customer successfully added")
+#         return True
     
 async def insert_appointment(conn, specialist_id, customer_id, appointment_date, appointment_time):
     '''Функция записи на прием к специалисту, принимает коннект на базу, идентификатор специалиста, 
@@ -325,17 +327,17 @@ async def insert_appointment(conn, specialist_id, customer_id, appointment_date,
         print("Appointment successfully scheduled.")
         return True
 
-async def get_customer_id(conn, name, phone, telegram_id = '@test'):
+async def get_customer_id(conn, name, phone, telegram_id):
     cursor = conn.cursor()
     cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
-    customer_id = cursor.fetchone()
-    if not customer_id:
+    respond = cursor.fetchone()
+    if not respond:
         cursor.execute(f'''INSERT INTO customers (name, phone, telegram_id) VALUES 
         ("{name}", "{phone}", "{telegram_id}");''')
         conn.commit()
         cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
         return cursor.fetchone()[0]        
-    return customer_id[0]
+    return respond[0]
         
 def get_specialists_telegramm_ids(conn):
     cursor = conn.cursor()
