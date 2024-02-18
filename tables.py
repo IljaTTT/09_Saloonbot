@@ -8,7 +8,7 @@ from functools import wraps
 import pandas as pd 
 import datetime
 from random import randint
-
+from tabulate import tabulate
 def print_as_dataframe(func):
     '''Декоратор преобразует ответ базы данных в красивый и удобный pd.Dataframe'''
     @wraps(func)
@@ -19,6 +19,22 @@ def print_as_dataframe(func):
         df = pd.DataFrame(result, columns=[col[0] for col in result.description])        
         return df          
     return wrapper
+
+def print_tabulate(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Вызов оригинальной функции
+        result = func(*args, **kwargs)
+        result = result.fetchall()
+        print(result)
+        # fetchall()
+        # Преобразование в датафрйем с описанием колонок
+        tabulated = tabulate(result, headers='keys', tablefmt='psql')
+        print(tabulated)
+        return f"<pre>{tabulated}</pre>"
+
+    return wrapper
+
 
 def drop_tables(conn: sqlite3.connect,
                 tables = ['specialists', 'customers', 'work_schedule']):
@@ -143,7 +159,8 @@ def delete_collisions_by_appointment_time(conn):
         conn.rollback()
         print("Error:", e)
         
-@print_as_dataframe
+@print_tabulate
+
 def show_table(conn, table: str):
     '''Возвращает ответ базы данных для заданной таблицы'''
     cursor = conn.cursor()
