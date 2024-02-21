@@ -102,7 +102,8 @@ async def specialist_select_handler(message: Message, state: FSMContext):
     await state.update_data(message_=message)  # Сохраняем имя, телефон с предидущего этапа,
     name_phone = message.text  # это нужно если человек захочет записаться еще к др. спец.
     *customer_name, customer_phone = name_phone.split(' ')  # Если несколько слов в имени
-    customer_name = '_'.join(customer_name) if type(customer_name) == list else customer_name
+    customer_name = ' '.join(customer_name) if type(customer_name) == list else customer_name
+    customer_name, customer_phone = customer_name[:16], customer_phone[:14]
     data = await state.get_data()  # Берем телеграм ид из контекста
     telegram_id = data['telegram_id']
     if 'customer_id' in data:  # Смотрим, есть ли в контексте customer_id
