@@ -5,44 +5,65 @@
 import sqlite3
 import os
 from functools import wraps
-import pandas as pd 
+import pandas as pd
 import datetime
 from random import randint
+from tabulate import tabulate
+
 
 def print_as_dataframe(func):
     '''Декоратор преобразует ответ базы данных в красивый и удобный pd.Dataframe'''
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Вызов оригинальной функции
-        result = func(*args, **kwargs)        
+        result = func(*args, **kwargs)
         # Преобразование в датафрйем с описанием колонок
-        df = pd.DataFrame(result, columns=[col[0] for col in result.description])        
-        return df          
+        df = pd.DataFrame(result, columns=[col[0] for col in result.description])
+        return df
+
     return wrapper
 
+
+def print_tabulate(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Вызов оригинальной функции
+        result = func(*args, **kwargs)
+        result = result.fetchall()
+        print(result)
+        # fetchall()
+        # Преобразование в датафрйем с описанием колонок
+        tabulated = tabulate(result, headers='keys', tablefmt='psql')
+        print(tabulated)
+        return f"<pre>{tabulated}</pre>"
+
+    return wrapper
+
+
 def drop_tables(conn: sqlite3.connect,
-                tables = ['specialists', 'customers', 'work_schedule']):
+                tables=['specialists', 'customers', 'work_schedule']):
     '''Функция удаления таблиц из con'''
-    cursor = conn.cursor()     
+    cursor = conn.cursor()
     for name in tables:
         try:
             cursor.execute(f'DROP TABLE {name}')
         except Exception as e:
             conn.rollback()
             print("Error:", e)
-    conn.commit() 
+    conn.commit()
 
 
-def create_tables(conn: sqlite3.connect, 
-                  tables = ['specialists', 'customers', 'work_schedule']):    
+def create_tables(conn: sqlite3.connect,
+                  tables=['specialists', 'customers', 'work_schedule']):
     '''Функция инициализации таблиц специалистов, посетителей, рабочего расписания'''
     try:
-#         os.remove(conn)
+        #         os.remove(conn)
         pass
     except:
         pass
-    cursor = conn.cursor()   
-    for table in tables:    
+    cursor = conn.cursor()
+    for table in tables:
         if table == 'specialists':
             cursor.execute(f'''
                 CREATE TABLE specialists (
@@ -53,7 +74,7 @@ def create_tables(conn: sqlite3.connect,
                 work_position TEXT NOT NULL
                 );
                 ''')
-        elif table == 'customers': 
+        elif table == 'customers':
             cursor.execute('''
                 CREATE TABLE customers (
                     id INTEGER PRIMARY KEY,
@@ -73,9 +94,9 @@ def create_tables(conn: sqlite3.connect,
                     FOREIGN KEY (specialist_id) REFERENCES specialists(id),
                     FOREIGN KEY (customer_id) REFERENCES customers(id)
                 );
-                ''')               
-    conn.commit() 
-    
+                ''')
+    conn.commit()
+
 
 def generate_random_work_schedule_records(n_records: int = 40):
     record = 'INSERT INTO work_schedule (specialist_id, customer_id, appointment_date, appointment_time) VALUES\n'
@@ -90,8 +111,8 @@ def generate_random_work_schedule_records(n_records: int = 40):
     record = record[:-2] + ';'
     return record
 
-def fill_test_data_to_tables(conn, tables: list, n_records = 40):
-    
+
+def fill_test_data_to_tables(conn, tables: list, n_records=40):
     '''Функция заполнения таблиц тестовыми данными'''
     cursor = conn.cursor()
     for table in tables:
@@ -102,24 +123,24 @@ def fill_test_data_to_tables(conn, tables: list, n_records = 40):
             ('Илья Тахтамыш', '444-7880', 'Esthetician', 'Iljattt_'),
             ('Jessica Martinez', '444-23234', 'Massage Therapist', ''),
             ('David Wilson', '444-2346', 'Makeup Artist', '');''')
-            print('Specialists added to specialists table.', end = ' ')
-        
-        elif table == 'customers': 
+            print('Specialists added to specialists table.', end=' ')
+
+        elif table == 'customers':
             cursor.execute('''INSERT INTO customers (name, phone, telegram_id) VALUES
             ('Alice Smith', '555-1234', '@Smith'),
             ('Bob Johnson', '555-5678', '@John' ),
             ('Charlie Brown', '555-9012', '@Briwn'),
             ('Diana Martinez', '555-3456', '@Marta'),
             ('Eva Wilson', '555-7890', '@Sida');''')
-            print('Customers added to customers table.', end = ' ')
-            
+            print('Customers added to customers table.', end=' ')
+
         elif table == 'work_schedule':
-            cursor.execute(generate_random_work_schedule_records(n_records))    
+            cursor.execute(generate_random_work_schedule_records(n_records))
             print('Test records added to work_schedule table.')
-    
+
     conn.commit()
 
-    
+
 def delete_collisions_by_appointment_time(conn):
     '''Функция удаления дубликатов записей в рабочем расписании'''
     try:
@@ -134,24 +155,27 @@ def delete_collisions_by_appointment_time(conn):
                 GROUP BY appointment_time, appointment_time, specialist_id
             )
         """)
-        
+
         # Commit the transaction
         conn.commit()
-        
+
         print("Collisions deleted successfully.")
     except Exception as e:
         conn.rollback()
         print("Error:", e)
-        
-@print_as_dataframe
+
+
+# @print_as_dataframe
+@print_tabulate
 def show_table(conn, table: str):
     '''Возвращает ответ базы данных для заданной таблицы'''
     cursor = conn.cursor()
     cursor = cursor.execute(f"SELECT * FROM {table};")
     return cursor
 
+
 def delete_duplicates_from_specialists(conn):
-    '''Функция удаления дубликатов записей в таблице специалистов'''    
+    '''Функция удаления дубликатов записей в таблице специалистов'''
     try:
         cursor = conn.cursor()
         # Identify the first occurrence of each unique specialist
@@ -163,18 +187,19 @@ def delete_duplicates_from_specialists(conn):
                 GROUP BY name, work_position
             )
         """)
-        
+
         # Commit the transaction
         conn.commit()
-        
+
         print("Duplicates deleted successfully.")
     except Exception as e:
         conn.rollback()
         print("Error:", e)
-        
+
+
 def delete_duplicates_from_customers(conn):
-    '''Функция удаления дубликатов записей в таблице посетителей'''    
-    
+    '''Функция удаления дубликатов записей в таблице посетителей'''
+
     try:
         cursor = conn.cursor()
         # Identify the first occurrence of each unique specialist
@@ -186,15 +211,16 @@ def delete_duplicates_from_customers(conn):
                 GROUP BY name, phone
             )
         """)
-        
+
         # Commit the transaction
         conn.commit()
-        
+
         print("Duplicates deleted successfully.")
     except Exception as e:
         conn.rollback()
         print("Error:", e)
-        
+
+
 @print_as_dataframe
 def show_full_schedule(conn):
     '''Возвращает рабочее расписание в отсортированном по времени записи виде: 
@@ -219,6 +245,7 @@ def show_full_schedule(conn):
 
     return cursor
 
+
 @print_as_dataframe
 def show_specialist_schedule(conn, specialist_id):
     '''Возвращает рабочее расписание для выбранного специалиста в виде: 
@@ -241,6 +268,7 @@ def show_specialist_schedule(conn, specialist_id):
 
     return cursor
 
+
 @print_as_dataframe
 def show_specialist_day_schedule(conn, specialist_id, day):
     '''Возвращает рабочее расписание для выбранного специалиста в виде: 
@@ -261,9 +289,9 @@ def show_specialist_day_schedule(conn, specialist_id, day):
         ws.appointment_date = "{day}"
     ORDER BY
         ws.appointment_date, ws.appointment_time;''')
-    
 
     return cursor
+
 
 def get_busy_hours(conn, specialist_id, day):
     '''Возвращает рабочее расписание для выбранного специалиста в виде: 
@@ -281,29 +309,33 @@ def get_busy_hours(conn, specialist_id, day):
     result = [item[0] for item in cursor.fetchall()]
     return result
 
+
 '''По идее эта функция не нужна, ее функционал включает get_customer_id '''
+
+
 async def insert_customer(conn, name, phone, telegram_id):
     pass
     # Проверяем есть ли этот telegram_id и phone в базе
     cursor = conn.cursor()
     cursor.execute(f'''SELECT 1 FROM customers 
                        WHERE phone = "{phone}" AND
-                       telegram_id = "{telegram_id}";''')                   
+                       telegram_id = "{telegram_id}";''')
     existing_appointment = cursor.fetchone()
     print(f'existing_appointment = {existing_appointment}')
-    if existing_appointment: 
+    if existing_appointment:
         # Если занято то выводим ошибку
         print("Error: Customer phone and telegram_id alredy in customers")
         return False
     else:
         print([name, phone, telegram_id])
-#         cursor = conn.cursor()
+        #         cursor = conn.cursor()
         cursor.execute(f'''INSERT INTO customers (name, phone, telegram_id) 
         VALUES ("{name}", "{phone}", "{telegram_id}");''')
         conn.commit()
         print("Customer successfully added")
         return True
-    
+
+
 async def insert_appointment(conn, specialist_id, customer_id, appointment_date, appointment_time):
     '''Функция записи на прием к специалисту, принимает коннект на базу, идентификатор специалиста, 
     идентификатор посетителя, время приема'''
@@ -313,9 +345,9 @@ async def insert_appointment(conn, specialist_id, customer_id, appointment_date,
     cursor.execute(f'''SELECT 1 FROM work_schedule 
                        WHERE appointment_date = "{appointment_date}" AND
                        appointment_time = "{appointment_time}" AND
-                       specialist_id = "{specialist_id}"''')                   
+                       specialist_id = "{specialist_id}"''')
     existing_appointment = cursor.fetchone()
-    if existing_appointment: 
+    if existing_appointment:
         # Если занято то выводим ошибку
         print("Error: Appointment time is not available.")
         return False
@@ -328,6 +360,7 @@ async def insert_appointment(conn, specialist_id, customer_id, appointment_date,
         print("Appointment successfully scheduled.")
         return True
 
+
 async def get_customer_id(conn, name, phone, telegram_id):
     cursor = conn.cursor()
     cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
@@ -337,19 +370,21 @@ async def get_customer_id(conn, name, phone, telegram_id):
         ("{name}", "{phone}", "{telegram_id}");''')
         conn.commit()
         cursor.execute(f'SELECT id FROM customers WHERE phone = "{phone}"')
-        return cursor.fetchone()[0]        
+        return cursor.fetchone()[0]
     return respond[0]
-        
+
+
 def get_specialists_telegramm_ids(conn):
     cursor = conn.cursor()
     cursor.execute('SELECT telegram_id FROM specialists')
     return [ids[0] for ids in cursor.fetchall()]
 
+
 async def get_spec_nameid(conn, telegram_id):
     cursor = conn.cursor()
     cursor.execute(f'''SELECT name, id 
                    FROM specialists 
-                   WHERE telegram_id = "{telegram_id}"''')   
+                   WHERE telegram_id = "{telegram_id}"''')
     name_id = cursor.fetchone()
     return name_id
 # os.remove('scheduler.db')
