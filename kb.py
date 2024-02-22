@@ -14,6 +14,17 @@ import datetime
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+def admin_keyboard(conn: sqlite3.connect) -> InlineKeyboardMarkup:
+    buttons = ['/cust_list', '/spec_list', '/show_full_schedule',
+               '/show_specialist_schedule', '/show_specialist_day_schedule',
+               ]
+    buttons = [
+        [InlineKeyboardButton(text=button, callback_data=button)]
+         for button in buttons]
+    # Клавиатура
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
 
 def specialists_keyboard(conn: sqlite3.connect) -> InlineKeyboardMarkup:
     """Клавиатура выбора специалистов"""

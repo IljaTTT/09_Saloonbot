@@ -3,21 +3,22 @@
 '''https://mastergroosha.github.io/aiogram-3-guide/fsm/'''
 # from aiogram import types, F
 from misc import dp
-from config import TABLES_PATH
+from config import (TABLES_PATH, ADMIN_TGID)
 # import datetime
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
-from kb import (specialists_keyboard, days_keyboard,
+from kb import (specialists_keyboard, days_keyboard, admin_keyboard,
                 specialist_time_keyboard, yes_no_keyboard)
 from aiogram.fsm.context import FSMContext
 # from aiogram.fsm.state import StatesGroup, State
-from states import SpecialistStates, AppointmentStates
+from states import SpecialistStates, AppointmentStates, AdminStates
 from tables import (insert_appointment, insert_customer, show_table,
                     get_customer_id, show_specialist_schedule,
                     show_specialist_day_schedule,
                     show_full_schedule,
                     get_specialists_telegramm_ids,
                     get_spec_nameid)
+from tabulate import tabulate
 
 import sqlite3
 
@@ -26,16 +27,25 @@ conn = sqlite3.connect(TABLES_PATH, timeout=5)
 
 """Собираем телеграм ид специалистов"""
 specialists_telegramm_ids = get_specialists_telegramm_ids(conn)
+admin_telegramm_ids = ADMIN_TGID
 
 
 # Separate handler functions for each type of callback query
 
+
 @dp.message(Command("start"))
 async def start_handler(message: Message, state: FSMContext):
-    """Начальный обработчик, смотрит telegram_id, определет специалист/посетитель
-    вызывает спрашивает имя и телефон у посетителя и рабочий день у специалиста """
-    telegram_id = message.chat.username  # Определение телеграм ид
-    if telegram_id in specialists_telegramm_ids:  # Проверяем специалист/посетитель
+    """Начальный обработчик, смотрит telegram_id, определет админ/специалист/посетитель.
+    В зависимости от категории к кототрой принадлежит данный telegram_id,
+    включает соответствующие состояния FSM"""
+    telegram_id = message.chat.username  #  # Проверяем если среди админов
+    if telegram_id == admin_telegramm_ids:
+        await message.answer(text='Добрый час, друг, /admin')
+        # await message.answer(text='команды: /spec_list, /cust_list')
+        await state.set_state(AdminStates.L1)
+        # await admin_handler(message, state)
+
+    elif telegram_id in specialists_telegramm_ids:  # Проверяем если среди специалистов
         await message.answer(text='Вы специалист!')
         """Определяем имя и ид специалиста в таблице по телеграм ид"""
         (specialist_name, specialist_id) = await get_spec_nameid(conn, telegram_id)
@@ -47,6 +57,51 @@ async def start_handler(message: Message, state: FSMContext):
         await state.update_data(telegram_id=telegram_id)
         await message.answer(text='Здравствуйте, введите свое имя и телефон через пробел')
         await state.set_state(AppointmentStates.SPEC_SELECT)
+
+
+@dp.message(AdminStates.L1)
+async def admin_handler(message: Message, state: FSMContext):
+    """"""
+    # telegram_id = message.chat.username  # Определение телеграм ид
+    if message.text == '/admin':
+            await message.answer(text="Команды админа",  # Клавиатура админа
+                                 reply_markup=admin_keyboard(conn))
+    await state.set_state(AdminStates.L1)
+
+@dp.callback_query(AdminStates.L1)
+async def admin_handler(callback_query: CallbackQuery, state: FSMContext):
+    """ """
+    # telegram_id = message.chat.username  # Определение телеграм ид
+    if callback_query.data == '/spec_list':
+        text = show_table(conn, 'specialists')
+        await callback_query.message.answer(text=text)
+        # await state.set_state(AdminStates.L1)
+
+    elif callback_query.data == '/cust_list':
+        text = show_table(conn, 'customers')
+        await callback_query.message.answer(text=text)
+        # await state.set_state(AdminStates.L1)
+
+    elif callback_query.data == '/show_full_schedule':
+        text = show_full_schedule(conn)
+        await callback_query.message.answer(text=text)
+        await state.set_state(AdminStates.L1)
+
+    elif callback_query.data == '/show_specialist_schedule':
+        await callback_query.message.answer(
+            text="Здравствуйте, выберите специалиста:",  # Клавиатура выбора специалиста
+            reply_markup=specialists_keyboard(conn))
+
+        await state.set_state(AdminStates.L2)
+
+    elif callback_query.data == '/show_specialist_day_schedule':
+        await callback_query.message.answer(
+            text="Здравствуйте, выберите специалиста:",  # Клавиатура выбора специалиста
+            reply_markup=specialists_keyboard(conn))
+
+        await state.set_state(AdminStates.L3)
+
+
 
 
 @dp.callback_query(SpecialistStates.DATE_SELECT,
@@ -68,7 +123,8 @@ async def specialist_select_handler(message: Message, state: FSMContext):
     await state.update_data(message_=message)  # Сохраняем имя, телефон с предидущего этапа,
     name_phone = message.text  # это нужно если человек захочет записаться еще к др. спец.
     *customer_name, customer_phone = name_phone.split(' ')  # Если несколько слов в имени
-    customer_name = '_'.join(customer_name) if type(customer_name) == list else customer_name
+    customer_name = ' '.join(customer_name) if type(customer_name) == list else customer_name
+    customer_name, customer_phone = customer_name[:16], customer_phone[:14]
     data = await state.get_data()  # Берем телеграм ид из контекста
     telegram_id = data['telegram_id']
     if 'customer_id' in data:  # Смотрим, есть ли в контексте customer_id
