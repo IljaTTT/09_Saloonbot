@@ -39,7 +39,7 @@ async def start_handler(message: Message, state: FSMContext):
     В зависимости от категории к кототрой принадлежит данный telegram_id,
     включает соответствующие состояния FSM"""
     telegram_id = message.chat.username  #  # Проверяем если среди админов
-    if telegram_id == admin_telegramm_ids:
+    if telegram_id == admin_telegramm_ids and state != AdminStates.customer:
         await message.answer(text='Добрый час, друг, /admin')
         # await message.answer(text='команды: /spec_list, /cust_list')
         await state.set_state(AdminStates.L1)
@@ -101,6 +101,19 @@ async def admin_handler(callback_query: CallbackQuery, state: FSMContext):
 
         await state.set_state(AdminStates.L3)
 
+    elif callback_query.data == '/customer':
+        await callback_query.message.answer(
+            text="Здравствуйте, вы стали посетителем:",  #
+            )
+        await state.set_state(AdminStates.customer)  #
+        await admin_customer_handler(callback_query.message, state)
+
+@dp.message(AdminStates.customer)
+async def admin_customer_handler(message: Message, state: FSMContext):
+    """"""
+    await message.answer(text='Здравствуйте, введите свое имя и телефон через пробел')
+    await state.set_state(AppointmentStates.SPEC_SELECT)
+    await state.update_data(telegram_id='telegram_id')
 
 
 

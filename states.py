@@ -3,7 +3,7 @@ from aiogram.fsm.state import StatesGroup, State
 '''Состояния для работы с админом'''
 class AdminStates(StatesGroup):
     L1 = State() # 
-    L2 = State()
+    customer = State()
 
 
 

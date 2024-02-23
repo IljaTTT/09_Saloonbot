@@ -17,6 +17,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 def admin_keyboard(conn: sqlite3.connect) -> InlineKeyboardMarkup:
     buttons = ['/cust_list', '/spec_list', '/show_full_schedule',
                '/show_specialist_schedule', '/show_specialist_day_schedule',
+               '/admin', '/specialist', '/customer'
                ]
     buttons = [
         [InlineKeyboardButton(text=button, callback_data=button)]
