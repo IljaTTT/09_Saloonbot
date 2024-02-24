@@ -2,8 +2,8 @@
 import misc
 import handlers
 import asyncio
-import logging
 
+import logging
 
 async def main():
     await misc.bot.delete_webhook(drop_pending_updates=True)

@@ -31,11 +31,11 @@ def print_tabulate(func):
         # Вызов оригинальной функции
         result = func(*args, **kwargs)
         result = result.fetchall()
-        print(result)
+        # print(result)
         # fetchall()
         # Преобразование в датафрйем с описанием колонок
         tabulated = tabulate(result, headers='keys', tablefmt='psql')
-        print(tabulated)
+        # print(tabulated)
         return f"<pre>{tabulated}</pre>"
 
     return wrapper
@@ -165,14 +165,21 @@ def delete_collisions_by_appointment_time(conn):
         print("Error:", e)
 
 
-# @print_as_dataframe
-@print_tabulate
+@print_as_dataframe
+# @print_tabulate
 def show_table(conn, table: str):
     '''Возвращает ответ базы данных для заданной таблицы'''
     cursor = conn.cursor()
     cursor = cursor.execute(f"SELECT * FROM {table};")
     return cursor
 
+# @print_as_dataframe
+@print_tabulate
+def show_table_tabulated(conn, table: str):
+    '''Возвращает ответ базы данных для заданной таблицы'''
+    cursor = conn.cursor()
+    cursor = cursor.execute(f"SELECT * FROM {table};")
+    return cursor
 
 def delete_duplicates_from_specialists(conn):
     '''Функция удаления дубликатов записей в таблице специалистов'''
@@ -221,9 +228,34 @@ def delete_duplicates_from_customers(conn):
         print("Error:", e)
 
 
-@print_as_dataframe
+# @print_as_dataframe
+@print_tabulate
 def show_full_schedule(conn):
     '''Возвращает рабочее расписание в отсортированном по времени записи виде: 
+    |дата-время|имя посетителя|телефон|имя специалиста|специальность|  '''
+    cursor = conn.cursor()
+    cursor = cursor.execute('''
+    SELECT
+        s.work_position AS spec_pos,
+        s.name AS s_name,
+        ws.appointment_date AS date,
+        ws.appointment_time AS time,
+        c.name AS c_name,
+        c.phone AS c_phone
+    FROM
+        work_schedule ws
+    JOIN
+        customers c ON ws.customer_id = c.id
+    JOIN
+        specialists s ON ws.specialist_id = s.id
+    ORDER BY
+        s.name, ws.appointment_date, ws.appointment_time;''')
+
+    return cursor
+
+@print_tabulate
+def show_full_schedule_tabulate(conn):
+    '''Возвращает рабочее расписание в отсортированном по времени записи виде:
     |дата-время|имя посетителя|телефон|имя специалиста|специальность|  '''
     cursor = conn.cursor()
     cursor = cursor.execute('''
@@ -267,6 +299,30 @@ def show_specialist_schedule(conn, specialist_id):
         ws.appointment_date, ws.appointment_time;''', (str(specialist_id)))
 
     return cursor
+
+
+@print_tabulate
+def show_specialist_schedule_tabulate(conn, specialist_id):
+    '''Возвращает рабочее расписание для выбранного специалиста в виде:
+    |дата-время|имя посетителя|телефон|  '''
+    cursor = conn.cursor()
+    cursor = cursor.execute('''
+    SELECT
+        ws.appointment_date AS date,
+        ws.appointment_time AS time,
+        c.name AS c_name,
+        c.phone AS c_phone
+    FROM
+        work_schedule ws
+    JOIN
+        customers c ON ws.customer_id = c.id
+    WHERE
+        ws.specialist_id = ?
+    ORDER BY
+        ws.appointment_date, ws.appointment_time;''', (str(specialist_id)))
+
+    return cursor
+
 
 
 @print_as_dataframe
@@ -340,7 +396,7 @@ async def insert_appointment(conn, specialist_id, customer_id, appointment_date,
     '''Функция записи на прием к специалисту, принимает коннект на базу, идентификатор специалиста, 
     идентификатор посетителя, время приема'''
     # Проверяем есть ли на указанное время запись
-    print(appointment_date)
+    # print(appointment_date)
     cursor = conn.cursor()
     cursor.execute(f'''SELECT 1 FROM work_schedule 
                        WHERE appointment_date = "{appointment_date}" AND

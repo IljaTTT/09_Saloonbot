@@ -2,7 +2,9 @@ from aiogram.fsm.state import StatesGroup, State
 
 '''Состояния для работы с админом'''
 class AdminStates(StatesGroup):
-    L1 = State() # 
+    L1 = State() #
+    SPEC_SHEDULE = State()
+    SPEC_DAY_SHEDULE = State()
     customer = State()
 
 
