@@ -29,12 +29,13 @@ def print_tabulate(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Вызов оригинальной функции
-        result = func(*args, **kwargs)
-        result = result.fetchall()
+        cursor = func(*args, **kwargs)
+        names = list(map(lambda x: x[0], cursor.description))
+        result = cursor.fetchall()
         # print(result)
         # fetchall()
         # Преобразование в датафрйем с описанием колонок
-        tabulated = tabulate(result, headers='keys', tablefmt='psql')
+        tabulated = tabulate(result, headers=names, tablefmt='psql')
         # print(tabulated)
         return f"<pre>{tabulated}</pre>"
 
@@ -175,7 +176,7 @@ def show_table(conn, table: str):
 
 # @print_as_dataframe
 @print_tabulate
-def show_table_tabulated(conn, table: str):
+def show_table_tabulate(conn, table: str):
     '''Возвращает ответ базы данных для заданной таблицы'''
     cursor = conn.cursor()
     cursor = cursor.execute(f"SELECT * FROM {table};")
@@ -328,6 +329,29 @@ def show_specialist_schedule_tabulate(conn, specialist_id):
 @print_as_dataframe
 def show_specialist_day_schedule(conn, specialist_id, day):
     '''Возвращает рабочее расписание для выбранного специалиста в виде: 
+    |дата|время|имя посетителя|телефон|  '''
+    cursor = conn.cursor()
+    cursor = cursor.execute(f'''
+    SELECT
+        ws.appointment_date AS date,
+        ws.appointment_time AS time,
+        c.name AS c_name,
+        c.phone AS c_phone
+    FROM
+        work_schedule ws
+    JOIN
+        customers c ON ws.customer_id = c.id
+    WHERE
+        ws.specialist_id = {specialist_id} AND
+        ws.appointment_date = "{day}"
+    ORDER BY
+        ws.appointment_date, ws.appointment_time;''')
+
+    return cursor
+
+@print_tabulate
+def show_specialist_day_schedule_tabulate(conn, specialist_id, day):
+    '''Возвращает рабочее расписание для выбранного специалиста в виде:
     |дата|время|имя посетителя|телефон|  '''
     cursor = conn.cursor()
     cursor = cursor.execute(f'''

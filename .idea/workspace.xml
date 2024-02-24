@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8a3b6ec3-07b6-4a30-90d8-2629022c5b2b" name="Changes" comment="Начал делать админский режим, остановился в месте admin_customer_handler,">
+    <list default="true" id="8a3b6ec3-07b6-4a30-90d8-2629022c5b2b" name="Changes" comment="Продолжаю делать админский режим, сделал режим посетителя, /show_full_schedule,/show_specialist_schedule.&#10;TODO /specialist, /show_specialist_day_schedule">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/database.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/scheduler.db" beforeDir="false" afterPath="$PROJECT_DIR$/scheduler.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/states.py" beforeDir="false" afterPath="$PROJECT_DIR$/states.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tables.py" beforeDir="false" afterPath="$PROJECT_DIR$/tables.py" afterDir="false" />
@@ -44,7 +44,8 @@
       <updated>1708185089876</updated>
       <workItem from="1708185092460" duration="1715000" />
       <workItem from="1708718709961" duration="5093000" />
-      <workItem from="1708799251025" duration="4991000" />
+      <workItem from="1708799251025" duration="5115000" />
+      <workItem from="1708804398323" duration="7275000" />
     </task>
     <task id="LOCAL-00001" summary="Начал делать админский режим, остановился в месте admin_customer_handler,">
       <created>1708723065632</created>
@@ -53,7 +54,14 @@
       <option name="project" value="LOCAL" />
       <updated>1708723065632</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Продолжаю делать админский режим, сделал режим посетителя, /show_full_schedule,/show_specialist_schedule.&#10;TODO /specialist, /show_specialist_day_schedule">
+      <created>1708804335784</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1708804335784</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -72,21 +80,11 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Начал делать админский режим, остановился в месте admin_customer_handler," />
-    <option name="LAST_COMMIT_MESSAGE" value="Начал делать админский режим, остановился в месте admin_customer_handler," />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>1</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="Продолжаю делать админский режим, сделал режим посетителя, /show_full_schedule,/show_specialist_schedule.&#10;TODO /specialist, /show_specialist_day_schedule" />
+    <option name="LAST_COMMIT_MESSAGE" value="Продолжаю делать админский режим, сделал режим посетителя, /show_full_schedule,/show_specialist_schedule.&#10;TODO /specialist, /show_specialist_day_schedule" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/09_Saloonbot$main.coverage" NAME="main Coverage Results" MODIFIED="1708803934970" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/09_Saloonbot$main.coverage" NAME="main Coverage Results" MODIFIED="1708813413009" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/09_Saloonbot$states.coverage" NAME="states Coverage Results" MODIFIED="1708721937750" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
