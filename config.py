@@ -1,3 +1,3 @@
-BOT_TOKEN = '6444751690:AAESP9CrRAgEhu9Fg_YfLQixp6_YMeOy8IA'
+BOT_TOKEN = ''
 TABLES_PATH = 'scheduler.db'
 ADMIN_TGID = 'Iljattt'
